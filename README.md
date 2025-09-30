@@ -11,7 +11,7 @@
 
 ## Setup
 
-## Setup Script
+## Interactive Script
 
 ``` bash
 git clone git@github.com:timescale/tiger-eon.git
