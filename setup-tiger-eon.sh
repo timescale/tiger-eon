@@ -24,7 +24,36 @@ ANTHROPIC_API_KEY_VAL=""
 LOGFIRE_TOKEN_VAL=""
 GITHUB_ORG_VAL=""
 GITHUB_TOKEN_VAL=""
-LINEAR_API_KEY_VAL=""
+
+# https://github.com/murrayju/build-strap-cli/blob/b2620ebcceffe0a905a0aa9b49b871aec6b4e6e8/bs#L17
+if [ "$(getconf LONG_BIT)" == "64" ]; then
+    arch=64
+  else
+    arch=86
+fi
+uname=$(uname -s)
+downloadDir=$(pwd)/download
+mkdir -p "$downloadDir"
+
+jqCmd=$(which jq 2>/dev/null || echo "$downloadDir/jq")
+if [ ! -f "$jqCmd" ]; then
+    if [[ $uname =~ ^Darwin* ]]; then
+        if [[ $(arch) == "arm64" ]]; then
+        jqName=jq-macos-arm64
+        else
+        jqName=jq-macos-amd64
+        fi
+    elif [[ $uname =~ ^Linux* ]]; then
+        jqName=jq-linux$arch
+    else
+        echo "Unknown os: $uname"
+        exit
+    fi
+    jqDl=https://github.com/stedolan/jq/releases/download/jq-1.7.1/$jqName
+    echo Downloading $jqDl to "$jqCmd"
+    curl -L -o "$jqCmd" $jqDl
+    chmod +x "$jqCmd"
+fi
 
 # Logging functions
 log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
@@ -428,62 +457,30 @@ write_env_file() {
     done
 
     # Update disabled status for all MCP servers in mcp_config.json
-    if command -v jq >/dev/null 2>&1; then
-        # Use jq to get all service names and update their disabled status
-        local all_services
-        all_services=$(jq -r 'keys[]' mcp_config.json)
+    # Use jq to get all service names and update their disabled status
+    local all_services
+    all_services=$($jqCmd -r 'keys[]' mcp_config.json)
 
-        while IFS= read -r service; do
-            # Check if service is in disabled_services array
-            local should_disable=false
-            for disabled_service in "${disabled_services[@]:-}"; do
-                if [[ "$service" == "$disabled_service" ]]; then
-                    should_disable=true
-                    break
-                fi
-            done
-
-            # Update the disabled status
-            if [[ "$should_disable" == "true" ]]; then
-                jq ".\"$service\".disabled = true" mcp_config.json > mcp_config.json.tmp && mv mcp_config.json.tmp mcp_config.json
-                log_success "Disabled $service MCP server"
-            else
-                jq ".\"$service\".disabled = false" mcp_config.json > mcp_config.json.tmp && mv mcp_config.json.tmp mcp_config.json
-                log_success "Enabled $service MCP server"
-            fi
-        done <<< "$all_services"
-    else
-        # Fallback without jq - update all known services
-        local all_services=("slack" "github")
-
-        for service in "${all_services[@]}"; do
-            # Check if service is in disabled_services array
-            local should_disable=false
-            for disabled_service in "${disabled_services[@]:-}"; do
-                if [[ "$service" == "$disabled_service" ]]; then
-                    should_disable=true
-                    break
-                fi
-            done
-
-            # Update the disabled status using sed
-            if [[ "$should_disable" == "true" ]]; then
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    sed -i '' "s|\"$service\":[[:space:]]*{[^}]*\"disabled\":[[:space:]]*[^,}]*|\"$service\": { \"disabled\": true|" mcp_config.json
-                else
-                    sed -i "s|\"$service\":[[:space:]]*{[^}]*\"disabled\":[[:space:]]*[^,}]*|\"$service\": { \"disabled\": true|" mcp_config.json
-                fi
-                log_success "Disabled $service MCP server"
-            else
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    sed -i '' "s|\"$service\":[[:space:]]*{[^}]*\"disabled\":[[:space:]]*[^,}]*|\"$service\": { \"disabled\": false|" mcp_config.json
-                else
-                    sed -i "s|\"$service\":[[:space:]]*{[^}]*\"disabled\":[[:space:]]*[^,}]*|\"$service\": { \"disabled\": false|" mcp_config.json
-                fi
-                log_success "Enabled $service MCP server"
+    while IFS= read -r service; do
+        # Check if service is in disabled_services array
+        local should_disable=false
+        for disabled_service in "${disabled_services[@]:-}"; do
+            if [[ "$service" == "$disabled_service" ]]; then
+                should_disable=true
+                break
             fi
         done
-    fi
+
+        # Update the disabled status
+        if [[ "$should_disable" == "true" ]]; then
+            $jqCmd ".\"$service\".disabled = true" mcp_config.json > mcp_config.json.tmp && mv mcp_config.json.tmp mcp_config.json
+            log_success "Disabled $service MCP server"
+        else
+            $jqCmd ".\"$service\".disabled = false" mcp_config.json > mcp_config.json.tmp && mv mcp_config.json.tmp mcp_config.json
+            log_success "Enabled $service MCP server"
+        fi
+    done <<< "$all_services"
+
 
     log_success "Environment configuration written to .env & mcp_config.json"
 }
