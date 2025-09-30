@@ -1,4 +1,4 @@
-# tiger-eon-public
+# tiger-eon
 
 ## Requirements
 
