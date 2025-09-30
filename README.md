@@ -11,9 +11,19 @@
 
 ## Setup
 
+## Setup Script
+
+``` bash
+git clone git@github.com:timescale/tiger-eon.git
+cd tiger-eon
+./setup-tiger-eon.sh
+```
+
+## Manual Setup
+
 ```bash
-git clone git@github.com:timescale/tiger-eon-public.git
-cd tiger-eon-public
+git clone git@github.com:timescale/tiger-eon.git
+cd tiger-eon
 cp .env.sample .env
 ```
 
@@ -59,3 +69,17 @@ Follow the steps for seting up Slack Ingest/MCP, except:
 3. Give it a name and hit "Create"
 4. On next page, click "Generate Write Token"
 5. Copy that into the `.env` file under `LOGFIRE_TOKEN`
+
+## Start Services
+
+To start only configured services (based on `mcp_config.json`):
+
+```bash
+./start.sh
+```
+
+To start all services:
+
+```bash
+docker compose up -d --build
+```

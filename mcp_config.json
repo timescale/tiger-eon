@@ -1,9 +1,11 @@
 {
   "slack": {
-    "url": "http://tiger-slack-mcp-server/mcp"
+    "url": "http://tiger-slack-mcp-server/mcp",
+    "disabled": false
   },
   "github": {
     "url": "http://tiger-gh-mcp-server/mcp",
-    "tool_prefix": "github"
+    "tool_prefix": "github",
+    "disabled": false
   }
 }
