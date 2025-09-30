@@ -122,13 +122,15 @@ validate_anthropic_token() {
     log_info "Validating Anthropic API key..."
 
     local response
-    response=$(curl -s -H "Authorization: Bearer $token" \
+    response=$(
+        curl -s \
+        -H "x-api-key: $token" \
+        -H "anthropic-version: 2023-06-01" \
         -H "Content-Type: application/json" \
-        "https://api.anthropic.com/v1/messages" \
-        -d '{"model":"claude-sonnet-4-20250514","max_tokens":1,"messages":[{"role":"user","content":"test"}]}' \
-        | grep -o '"error"' || echo "ok")
+        "https://api.anthropic.com/v1/models"
+    )
 
-    if [[ "$response" == '"error"' ]]; then
+    if echo "$response" | grep -q '"type":"error"'; then
         log_error "Invalid Anthropic API key"
         return 1
     fi
@@ -198,7 +200,7 @@ create_slack_app() {
 
     # Interactive Slack App Setup
     echo "Creating $app_type Slack App:"
-    
+
 
     open_browser "https://api.slack.com/apps/"
 
