@@ -459,7 +459,7 @@ write_env_file() {
     # Update disabled status for all MCP servers in mcp_config.json
     # Use jq to get all service names and update their disabled status
     local all_services
-    all_services=$(jq -r 'keys[]' mcp_config.json)
+    all_services=$($jqCmd -r 'keys[]' mcp_config.json)
 
     while IFS= read -r service; do
         # Check if service is in disabled_services array
