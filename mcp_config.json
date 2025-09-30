@@ -1,0 +1,9 @@
+{
+  "slack": {
+    "url": "http://tiger-slack-mcp-server/mcp"
+  },
+  "github": {
+    "url": "http://tiger-gh-mcp-server/mcp",
+    "tool_prefix": "github"
+  }
+}

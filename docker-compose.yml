@@ -1,0 +1,85 @@
+services:
+  db:
+    image: timescale/timescaledb-ha:pg17
+    environment:
+      POSTGRES_DB: ${PGDATABASE}
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_PORT: ${PGPORT}
+    ports:
+      - "5432:${PGPORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  tiger-agent: &agent
+    image: ghcr.io/timescale/tiger-agent:0.0.2
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: &env_vars
+      PGHOST: ${PGHOST}
+      PGPORT: ${PGPORT}
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SLACK_APP_TOKEN: ${SLACK_AGENT_APP_TOKEN}
+      SLACK_BOT_TOKEN: ${SLACK_AGENT_BOT_TOKEN}
+      LOGFIRE_TOKEN: ${LOGFIRE_TOKEN}
+      LOGFIRE_ENVIRONMENT: ${LOGFIRE_ENVIRONMENT}
+      LOGFIRE_TRACES_ENDPOINT: ${LOGFIRE_TRACES_ENDPOINT}
+      LOGFIRE_LOGS_ENDPOINT: ${LOGFIRE_LOGS_ENDPOINT}
+    volumes:
+      - ./mcp_config.json:/app/mcp_config.json:ro
+      - ./prompts:/app/prompts:ro
+    command: ["uv", "run", "tiger_agent", "run", "--mcp-config", "/app/mcp_config.json"]
+
+  tiger-agent-migrate:
+    <<: *agent
+    command: ["uv", "run", "tiger_agent", "migrate"]
+
+  tiger-slack-ingest:
+    image: ghcr.io/timescale/tiger-slack-ingest:0.1.2
+    depends_on:
+      - db
+    environment:
+      <<: *env_vars
+      SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
+      SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
+
+  tiger-slack-mcp-server:
+    image: ghcr.io/timescale/tiger-slack-mcp:0.1.2
+    depends_on:
+      - db
+    environment:
+      <<: *env_vars
+      PORT: 80
+      SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
+      SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
+    ports:
+      - "3001:80"
+
+  tiger-gh-mcp-server:
+    image: ghcr.io/timescale/tiger-github-mcp:0.1.1
+    depends_on:
+      - db
+    environment:
+      PORT: 80
+      GITHUB_ORG: ${GITHUB_ORG}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      LOGFIRE_TOKEN: ${LOGFIRE_TOKEN}
+      LOGFIRE_ENVIRONMENT: ${LOGFIRE_ENVIRONMENT}
+      LOGFIRE_TRACES_ENDPOINT: ${LOGFIRE_TRACES_ENDPOINT}
+      LOGFIRE_LOGS_ENDPOINT: ${LOGFIRE_LOGS_ENDPOINT}
+    ports:
+      - "3002:80"
+
+
+volumes:
+  postgres_data:
