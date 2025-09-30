@@ -17,7 +17,7 @@ services:
       retries: 5
       start_period: 10s
 
-  tiger-agent: &agent
+  tiger-agent:
     image: ghcr.io/timescale/tiger-agent:0.0.2
     depends_on:
       db:
@@ -38,11 +38,15 @@ services:
     volumes:
       - ./mcp_config.json:/app/mcp_config.json:ro
       - ./prompts:/app/prompts:ro
-    command: ["uv", "run", "tiger_agent", "run", "--mcp-config", "/app/mcp_config.json"]
-
-  tiger-agent-migrate:
-    <<: *agent
-    command: ["uv", "run", "tiger_agent", "migrate"]
+    command:
+      [
+        "uv",
+        "run",
+        "tiger_agent",
+        "run",
+        "--mcp-config",
+        "/app/mcp_config.json",
+      ]
 
   tiger-slack-ingest:
     image: ghcr.io/timescale/tiger-slack-ingest:0.1.2
@@ -79,7 +83,6 @@ services:
       LOGFIRE_LOGS_ENDPOINT: ${LOGFIRE_LOGS_ENDPOINT}
     ports:
       - "3002:80"
-
 
 volumes:
   postgres_data:
