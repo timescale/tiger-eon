@@ -15,6 +15,10 @@ NC='\033[0m' # No Color
 selected_services=()
 disabled_services=()
 
+# Manifest file paths
+INGEST_MANIFEST_PATH=""
+AGENT_MANIFEST_PATH="slack-app-manifest.json"
+
 # Token storage - using regular variables instead of associative array for compatibility
 SLACK_AGENT_BOT_TOKEN_VAL=""
 SLACK_AGENT_APP_TOKEN_VAL=""
@@ -61,6 +65,26 @@ log_success() { echo -e "${GREEN}✓${NC} $1"; }
 log_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
 log_error() { echo -e "${RED}✗${NC} $1"; }
 
+# Check and prepare manifest files
+check_manifest_files() {
+    log_info "Checking manifest files..."
+
+    # Download ingest manifest from tiger-slack repository
+    INGEST_MANIFEST_PATH=$(get_ingest_manifest)
+    if [[ -z "$INGEST_MANIFEST_PATH" ]]; then
+        log_error "Failed to download ingest manifest, please create an issue here: https://github.com/timescale/tiger-eon/issues/"
+        exit 1
+    fi
+    log_success "Ingest manifest ready"
+
+    # Check local agent manifest
+    if [[ ! -f "$AGENT_MANIFEST_PATH" ]]; then
+        log_error "Agent manifest file '$AGENT_MANIFEST_PATH' not found, please create an issue here: https://github.com/timescale/tiger-eon/issues"
+        exit 1
+    fi
+    log_success "Agent manifest found"
+}
+
 # Browser opening function
 open_browser() {
     local url="$1"
@@ -83,6 +107,11 @@ intro_message() {
     echo "Hi! I'm eon, a TigerData agent!"
     echo "I'm going to guide you through the setup"
     echo "with the services you need."
+    echo ""
+    echo "The core install includes the following:" 
+    echo "  - a Slack App for the ingest service that will receive all messages/reactions from public channels"
+    echo "  - a Slack App for the agent that will receive @mentions to it"
+    echo "  - a TimescaleDB instance to store the above data"
     echo ""
     echo "This is the workflow that we will use:"
     echo "1. Create Slack App for Ingest & gather tokens"
@@ -134,7 +163,7 @@ validate_slack_tokens() {
     # Validate bot token
     local bot_response
     bot_response=$(curl -s -H "Authorization: Bearer $bot_token" \
-        "https://slack.com/api/auth.test" | grep -o '"ok":[^,]*' | cut -d: -f2)
+        "https://slack.com/api/auth.test" | $jqCmd -r '.ok')
 
     if [[ "$bot_response" != "true" ]]; then
         log_error "Invalid Slack bot token"
@@ -159,7 +188,7 @@ validate_anthropic_token() {
         "https://api.anthropic.com/v1/models"
     )
 
-    if echo "$response" | grep -q '"type":"error"'; then
+    if echo "$response" | $jqCmd -e '.type == "error"' > /dev/null; then
         log_error "Invalid Anthropic API key"
         return 1
     fi
@@ -176,7 +205,7 @@ validate_github_token() {
 
     local response
     response=$(curl -s -H "Authorization: token $token" \
-        "https://api.github.com/user" | grep -o '"login"' || echo "")
+        "https://api.github.com/user" | $jqCmd -r '.login // empty')
 
     if [[ -z "$response" ]]; then
         log_error "Invalid GitHub token"
@@ -187,7 +216,7 @@ validate_github_token() {
     if [[ -n "$org" ]]; then
         local org_response
         org_response=$(curl -s -H "Authorization: token $token" \
-            "https://api.github.com/orgs/$org" | grep -o '"login"' || echo "")
+            "https://api.github.com/orgs/$org" | $jqCmd -r '.login // empty')
 
         if [[ -z "$org_response" ]]; then
             log_warning "Cannot access GitHub org '$org' with this token"
@@ -220,16 +249,48 @@ create_slack_app() {
     local bot_token_var="$3"
     local app_token_var="$4"
 
-    echo "**** Slack App Creation - $app_type ****"
+    echo "**** Slack App Creation - $app_type  ****"
     echo ""
+
+    # Check if manifest file exists first
+    if [[ ! -f "$manifest_file" ]]; then
+        log_warning "$manifest_file not found - you'll need to create the app manually"
+        return 1
+    fi
+
     echo "This will guide you through the Slack app setup process."
     read -p "Press any key to open the Slack API site in your browser..."
     echo ""
 
-
     # Interactive Slack App Setup
-    echo "Creating $app_type Slack App:"
+    echo "Creating Slack App:"
 
+    # Extract defaults from manifest file
+    local default_name=$($jqCmd -r '.display_information.name' "$manifest_file")
+    local default_description=$($jqCmd -r '.display_information.description' "$manifest_file")
+
+    echo ""
+    echo "App Configuration:"
+    echo "Current defaults - Name: '$default_name', Description: '$default_description'"
+    echo ""
+
+    # Prompt for custom name
+    read -p "App name (press Enter for '$default_name'): " custom_name
+    if [[ -z "$custom_name" ]]; then
+        custom_name="$default_name"
+    fi
+
+    # Prompt for custom description
+    read -p "App description (press Enter for '$default_description'): " custom_description
+    if [[ -z "$custom_description" ]]; then
+        custom_description="$default_description"
+    fi
+
+    # Create temporary manifest with updated values
+    local temp_manifest="/tmp/${app_type}_manifest_$$.json"
+    $jqCmd --arg name "$custom_name" --arg desc "$custom_description" \
+        '.display_information.name = $name | .display_information.description = $desc | .features.bot_user.display_name = $name' \
+        "$manifest_file" > "$temp_manifest"
 
     open_browser "https://api.slack.com/apps/"
 
@@ -237,21 +298,20 @@ create_slack_app() {
 
     read -p "Press Enter after selecting your workspace and clicking Next..."
 
-    # Show manifest file content
-    if [[ -f "$manifest_file" ]]; then
-        echo ""
-        echo "App Manifest for $app_type:"
-        echo "----------------------------------------"
-        cat "$manifest_file"
-        echo ""
-        echo "----------------------------------------"
-        echo ""
-    else
-        log_warning "$manifest_file not found - you'll need to create the app manually"
-        return 1
-    fi
+    # Show customized manifest file content
+    echo ""
+    echo "App Manifest for $app_type:"
+    echo "----------------------------------------"
+    cat "$temp_manifest"
+    echo ""
+    echo "----------------------------------------"
+    echo ""
 
-    echo "2. Copy the manifest shown above and paste it into the App creation wizard (note: customize display_name and name), then click 'Next' and 'Create'"
+    echo "2. Copy the manifest shown above and paste it into the App creation wizard, then click 'Next' and 'Create'"
+
+    # Clean up temporary manifest file
+    rm -f "$temp_manifest"
+
     echo ""
     read -p "Press Enter after creating the $app_type app..."
 
@@ -305,15 +365,9 @@ collect_required_tokens() {
     echo "=== Required Configuration ==="
     echo ""
 
-    # Fetch the ingest manifest from https://github.com/timescale/tiger-slack/blob/main/slack-app-manifest.json
-    local ingest_manifest_path=$(get_ingest_manifest)
-
-    # Create both Slack apps (workspace name will be asked during first app creation)
-    create_slack_app "$ingest_manifest_path" "ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
-    create_slack_app "slack-app-manifest.json" "agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
-
-    # Clean up temporary manifest file
-    rm -f "$ingest_manifest_path"
+    # Create both Slack apps using pre-checked manifest files
+    create_slack_app "$INGEST_MANIFEST_PATH" "Ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
+    create_slack_app "$AGENT_MANIFEST_PATH" "Agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
 
     # Anthropic API key
     echo "🤖 Anthropic Configuration"
@@ -494,7 +548,6 @@ write_env_file() {
     log_success "Environment configuration written to .env & mcp_config.json"
 }
 
-# Start services
 start_services() {
     echo ""
     echo "=== Starting Services ==="
@@ -504,7 +557,6 @@ start_services() {
         exit 1
     fi
 
-    # Ask if user wants to start services
     read -p "Do you want to start the selected services now? [Y/n]: " start_choice
 
     if [[ $start_choice =~ ^[Nn] ]]; then
@@ -540,17 +592,25 @@ start_services() {
     fi
 }
 
-# Main function
+cleanup() {
+    # Clean up temporary ingest manifest file
+    if [[ -n "$INGEST_MANIFEST_PATH" && -f "$INGEST_MANIFEST_PATH" ]]; then
+        rm -f "$INGEST_MANIFEST_PATH"
+        log_info "Cleaned up temporary ingest manifest file"
+    fi
+}
+
 main() {
+    check_manifest_files
     intro_message
     check_resume_or_fresh_start
     collect_required_tokens
     select_and_configure_mcp_services
     write_env_file
     start_services
+    cleanup
 }
 
-# Check dependencies
 check_dependencies() {
     local deps=("curl" "docker")
     for dep in "${deps[@]}"; do
