@@ -395,8 +395,17 @@ select_and_configure_mcp_services() {
 collect_github_tokens() {
     echo ""
     echo "🐙 GitHub Configuration"
-    open_browser "https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo,read:org"
-    echo "Create a GitHub personal access token with 'repo' and 'read:org' scopes"
+
+    # Ask for repository access type
+    read -p "Do you want to include access to private repositories? [y/N]: " repo_access_choice
+
+    if [[ "$repo_access_choice" =~ ^[Yy]$ ]]; then
+        open_browser "https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo,read:org"
+        echo "Create a GitHub personal access token with 'repo' and 'read:org' scopes"
+    else
+        open_browser "https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo:status,public_repo"
+        echo "Create a GitHub personal access token with 'repo:status' and 'public_repo' scopes"
+    fi
     echo ""
 
     while true; do
