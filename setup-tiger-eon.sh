@@ -84,6 +84,11 @@ intro_message() {
     echo "I'm going to guide you through the setup"
     echo "with the services you need."
     echo ""
+    echo "The core install includes the following:" 
+    echo "  - a Slack App for the ingest service that will receive all messages/reactions from public channels"
+    echo "  - a Slack App for the agent that will receive @mentions to it"
+    echo "  - a TimescaleDB instance to store the above data"
+    echo ""
     echo "This is the workflow that we will use:"
     echo "1. Create Slack App for Ingest & gather tokens"
     echo "2. Create Slack App for Agent & gather tokens"
@@ -220,16 +225,49 @@ create_slack_app() {
     local bot_token_var="$3"
     local app_token_var="$4"
 
-    echo "**** Slack App Creation - $app_type ****"
+    echo "**** Slack App Creation - $app_type  ****"
     echo ""
+
+    # Check if manifest file exists first
+    if [[ ! -f "$manifest_file" ]]; then
+        log_warning "$manifest_file not found - you'll need to create the app manually"
+        return 1
+    fi
+
     echo "This will guide you through the Slack app setup process."
     read -p "Press any key to open the Slack API site in your browser..."
     echo ""
 
-
     # Interactive Slack App Setup
-    echo "Creating $app_type Slack App:"
+    echo "Creating Slack App:"
 
+    # Extract defaults from manifest file
+    local default_name=$(grep -o '"name": "[^"]*"' "$manifest_file" | cut -d'"' -f4)
+    local default_description=$(grep -o '"description": "[^"]*"' "$manifest_file" | cut -d'"' -f4)
+
+    echo ""
+    echo "App Configuration:"
+    echo "Current defaults - Name: '$default_name', Description: '$default_description'"
+    echo ""
+
+    # Prompt for custom name
+    read -p "App name (press Enter for '$default_name'): " custom_name
+    if [[ -z "$custom_name" ]]; then
+        custom_name="$default_name"
+    fi
+
+    # Prompt for custom description
+    read -p "App description (press Enter for '$default_description'): " custom_description
+    if [[ -z "$custom_description" ]]; then
+        custom_description="$default_description"
+    fi
+
+    # Create temporary manifest with updated values
+    local temp_manifest="/tmp/${app_type}_manifest_$$.json"
+    sed -e "s/\"name\": \"[^\"]*\"/\"name\": \"$custom_name\"/g" \
+        -e "s/\"description\": \"[^\"]*\"/\"description\": \"$custom_description\"/g" \
+        -e "s/\"display_name\": \"[^\"]*\"/\"display_name\": \"$custom_name\"/g" \
+        "$manifest_file" > "$temp_manifest"
 
     open_browser "https://api.slack.com/apps/"
 
@@ -237,21 +275,20 @@ create_slack_app() {
 
     read -p "Press Enter after selecting your workspace and clicking Next..."
 
-    # Show manifest file content
-    if [[ -f "$manifest_file" ]]; then
-        echo ""
-        echo "App Manifest for $app_type:"
-        echo "----------------------------------------"
-        cat "$manifest_file"
-        echo ""
-        echo "----------------------------------------"
-        echo ""
-    else
-        log_warning "$manifest_file not found - you'll need to create the app manually"
-        return 1
-    fi
+    # Show customized manifest file content
+    echo ""
+    echo "App Manifest for $app_type:"
+    echo "----------------------------------------"
+    cat "$temp_manifest"
+    echo ""
+    echo "----------------------------------------"
+    echo ""
 
-    echo "2. Copy the manifest shown above and paste it into the App creation wizard (note: customize display_name and name), then click 'Next' and 'Create'"
+    echo "2. Copy the manifest shown above and paste it into the App creation wizard, then click 'Next' and 'Create'"
+
+    # Clean up temporary manifest file
+    rm -f "$temp_manifest"
+
     echo ""
     read -p "Press Enter after creating the $app_type app..."
 
@@ -309,8 +346,8 @@ collect_required_tokens() {
     local ingest_manifest_path=$(get_ingest_manifest)
 
     # Create both Slack apps (workspace name will be asked during first app creation)
-    create_slack_app "$ingest_manifest_path" "ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
-    create_slack_app "slack-app-manifest.json" "agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
+    create_slack_app "$ingest_manifest_path" "Ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
+    create_slack_app "slack-app-manifest.json" "Agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
 
     # Clean up temporary manifest file
     rm -f "$ingest_manifest_path"
