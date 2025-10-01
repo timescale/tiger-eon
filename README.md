@@ -2,14 +2,15 @@
 
 ## What Can EON Do?
 
-### 📊 Track Latest Project Developments
+### Track Latest Project Developments
+
 Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
 
 ![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/progress.png)
 
 *Get comprehensive insights into recent developments, and cross-platform project updates.*
 
-### 🔍 Understand Technical Changes via the Github integration
+### Understand Technical Changes via the Github integration
 
 ![Screenshot of EON analyzing GitHub code changes and providing technical insights about project modifications and pull requests](./images/github.png)
 
@@ -23,6 +24,36 @@ Stay up-to-date with what's happening across your projects and team members with
   * [Slack](https://slack.com/)
   * [GitHub](https://github.com/) (Optional)
   * [Anthropic](https://www.anthropic.com/)
+
+## High-Level Architecture
+
+Eon leverages the [tiger-agent](https://github.com/timescale/tiger-agent) library, which provides Slack event handling with robust event queuing/retrying and TimescaleDB-powered event history.
+
+```mermaid
+graph TB
+    %% slack app mention @eon
+    U[Slack App Mention @agent]
+
+    %% Main Orchestrator
+    E[eon Agent]
+
+    %% External Services (via MCP)
+    GH[GitHub MCP]
+    SL[Slack MCP]
+
+    %% Flow
+    U --> E
+    
+    E --> GH
+    E --> SL
+    
+    %% Link to tiger-agent repository
+    click H "https://github.com/timescale/tiger-agent"
+
+    %% Links to MCP server repositories
+    click GH "https://github.com/timescale/tiger-gh-mcp-server"
+    click SL "https://github.com/timescale/tiger-slack"
+```
 
 ## Setup
 
