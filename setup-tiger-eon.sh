@@ -507,7 +507,7 @@ start_services() {
         echo "• ./start.sh"
         echo ""
         echo "Once started, you can:"
-        echo "• Check logs: docker compose logs -f app"
+        echo "• Check logs: docker compose logs -f tiger-agent"
         echo "• View services: docker compose ps"
         echo "• Stop services: docker compose down"
         return 0
