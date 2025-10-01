@@ -266,8 +266,8 @@ create_slack_app() {
     echo "Creating Slack App:"
 
     # Extract defaults from manifest file
-    local default_name=$($jqCmd -r '.name' "$manifest_file")
-    local default_description=$($jqCmd -r '.description' "$manifest_file")
+    local default_name=$($jqCmd -r '.display_information.name' "$manifest_file")
+    local default_description=$($jqCmd -r '.display_information.description' "$manifest_file")
 
     echo ""
     echo "App Configuration:"
@@ -289,7 +289,7 @@ create_slack_app() {
     # Create temporary manifest with updated values
     local temp_manifest="/tmp/${app_type}_manifest_$$.json"
     $jqCmd --arg name "$custom_name" --arg desc "$custom_description" \
-        '.name = $name | .description = $desc | .display_name = $name' \
+        '.display_information.name = $name | .display_information.description = $desc | .features.bot_user.display_name = $name' \
         "$manifest_file" > "$temp_manifest"
 
     open_browser "https://api.slack.com/apps/"
