@@ -5,7 +5,7 @@
 ### 📊 Track Latest Project Developments  
 Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
 
-![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/progress-tracking.png)
+![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/progress.png)
 
 *Get comprehensive insights into recent developments, and cross-platform project updates.*
 
