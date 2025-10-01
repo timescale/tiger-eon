@@ -402,12 +402,12 @@ collect_github_tokens() {
     echo "2) Public repositories only"
     read -p "Choose [1/2]: " repo_access_choice
 
-    if [[ "$repo_access_choice" == "2" ]]; then
-        open_browser "https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo:status,public_repo"
-        echo "Create a GitHub personal access token with 'repo:status' and 'public_repo' scopes"
-    else
+    if [[ "$repo_access_choice" == "1" ]]; then
         open_browser "https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo,read:org"
         echo "Create a GitHub personal access token with 'repo' and 'read:org' scopes"
+    else
+        open_browser "https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo:status,public_repo"
+        echo "Create a GitHub personal access token with 'repo:status' and 'public_repo' scopes"
     fi
     echo ""
 
