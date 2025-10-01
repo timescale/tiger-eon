@@ -15,6 +15,10 @@ NC='\033[0m' # No Color
 selected_services=()
 disabled_services=()
 
+# Manifest file paths
+INGEST_MANIFEST_PATH=""
+AGENT_MANIFEST_PATH="slack-app-manifest.json"
+
 # Token storage - using regular variables instead of associative array for compatibility
 SLACK_AGENT_BOT_TOKEN_VAL=""
 SLACK_AGENT_APP_TOKEN_VAL=""
@@ -60,6 +64,26 @@ log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
 log_success() { echo -e "${GREEN}✓${NC} $1"; }
 log_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
 log_error() { echo -e "${RED}✗${NC} $1"; }
+
+# Check and prepare manifest files
+check_manifest_files() {
+    log_info "Checking manifest files..."
+
+    # Download ingest manifest from tiger-slack repository
+    INGEST_MANIFEST_PATH=$(get_ingest_manifest)
+    if [[ -z "$INGEST_MANIFEST_PATH" ]]; then
+        log_error "Failed to download ingest manifest, please create an issue here: https://github.com/timescale/tiger-eon/issues/"
+        exit 1
+    fi
+    log_success "Ingest manifest ready"
+
+    # Check local agent manifest
+    if [[ ! -f "$AGENT_MANIFEST_PATH" ]]; then
+        log_error "Agent manifest file '$AGENT_MANIFEST_PATH' not found, please create an issue here: https://github.com/timescale/tiger-eon/issues"
+        exit 1
+    fi
+    log_success "Agent manifest found"
+}
 
 # Browser opening function
 open_browser() {
@@ -341,15 +365,9 @@ collect_required_tokens() {
     echo "=== Required Configuration ==="
     echo ""
 
-    # Fetch the ingest manifest from https://github.com/timescale/tiger-slack/blob/main/slack-app-manifest.json
-    local ingest_manifest_path=$(get_ingest_manifest)
-
-    # Create both Slack apps (workspace name will be asked during first app creation)
-    create_slack_app "$ingest_manifest_path" "Ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
-    create_slack_app "slack-app-manifest.json" "Agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
-
-    # Clean up temporary manifest file
-    rm -f "$ingest_manifest_path"
+    # Create both Slack apps using pre-checked manifest files
+    create_slack_app "$INGEST_MANIFEST_PATH" "Ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
+    create_slack_app "$AGENT_MANIFEST_PATH" "Agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
 
     # Anthropic API key
     echo "🤖 Anthropic Configuration"
@@ -521,7 +539,6 @@ write_env_file() {
     log_success "Environment configuration written to .env & mcp_config.json"
 }
 
-# Start services
 start_services() {
     echo ""
     echo "=== Starting Services ==="
@@ -531,7 +548,6 @@ start_services() {
         exit 1
     fi
 
-    # Ask if user wants to start services
     read -p "Do you want to start the selected services now? [Y/n]: " start_choice
 
     if [[ $start_choice =~ ^[Nn] ]]; then
@@ -567,17 +583,25 @@ start_services() {
     fi
 }
 
-# Main function
+cleanup() {
+    # Clean up temporary ingest manifest file
+    if [[ -n "$INGEST_MANIFEST_PATH" && -f "$INGEST_MANIFEST_PATH" ]]; then
+        rm -f "$INGEST_MANIFEST_PATH"
+        log_info "Cleaned up temporary ingest manifest file"
+    fi
+}
+
 main() {
+    check_manifest_files
     intro_message
     check_resume_or_fresh_start
     collect_required_tokens
     select_and_configure_mcp_services
     write_env_file
     start_services
+    cleanup
 }
 
-# Check dependencies
 check_dependencies() {
     local deps=("curl" "docker")
     for dep in "${deps[@]}"; do
