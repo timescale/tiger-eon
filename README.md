@@ -2,7 +2,7 @@
 
 ## What Can EON Do?
 
-### 📊 Track Latest Project Developments  
+### 📊 Track Latest Project Developments
 Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
 
 ![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/progress.png)
@@ -21,12 +21,12 @@ Stay up-to-date with what's happening across your projects and team members with
 * [Docker](https://www.docker.com/)
 * Accounts on:
   * [Slack](https://slack.com/)
-  * [GitHub](https://github.com/)
+  * [GitHub](https://github.com/) (Optional)
   * [Anthropic](https://www.anthropic.com/)
 
 ## Setup
 
-## Interactive Script (Recommended)
+## Interactive Setup (Recommended)
 
 ``` bash
 git clone git@github.com:timescale/tiger-eon.git
@@ -98,3 +98,7 @@ To start all services:
 ```bash
 docker compose up -d --build
 ```
+
+## Customize
+
+You can customize the MCP servers by [editing a configuration file](/docs/mcp-config.md). To modify the system or user prompts, [edit the Jinja2 templates](/docs/prompts.md).
