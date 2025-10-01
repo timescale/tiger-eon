@@ -133,3 +133,12 @@ docker compose up -d --build
 ## Customize
 
 You can customize the MCP servers by [editing a configuration file](/docs/mcp-config.md). To modify the system or user prompts, [edit the Jinja2 templates](/docs/prompts.md).
+
+## Import Slack Data
+
+To make the Slack MCP server more powerful, you can also restore a dump of your slack data, allowing eon to answer questions about historical
+threads or channels, and not just from when it was setup. To do so:
+
+1. Follow the [Slack Docs](https://slack.com/help/articles/201658943-Export-your-workspace-data) on getting an export of your workspace
+2. Download the zip to your computer, and unzip it
+3. Run `./import-slack.sh <path/to/slack/export>` replacing the argument with the actual path to your dump.
