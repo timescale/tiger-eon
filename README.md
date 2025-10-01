@@ -26,7 +26,7 @@ Stay up-to-date with what's happening across your projects and team members with
 
 ## Setup
 
-## Interactive Script
+## Interactive Script (Recommended)
 
 ``` bash
 git clone git@github.com:timescale/tiger-eon.git
