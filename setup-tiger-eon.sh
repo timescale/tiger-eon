@@ -139,7 +139,7 @@ validate_slack_tokens() {
     # Validate bot token
     local bot_response
     bot_response=$(curl -s -H "Authorization: Bearer $bot_token" \
-        "https://slack.com/api/auth.test" | grep -o '"ok":[^,]*' | cut -d: -f2)
+        "https://slack.com/api/auth.test" | $jqCmd -r '.ok')
 
     if [[ "$bot_response" != "true" ]]; then
         log_error "Invalid Slack bot token"
@@ -164,7 +164,7 @@ validate_anthropic_token() {
         "https://api.anthropic.com/v1/models"
     )
 
-    if echo "$response" | grep -q '"type":"error"'; then
+    if echo "$response" | $jqCmd -e '.type == "error"' > /dev/null; then
         log_error "Invalid Anthropic API key"
         return 1
     fi
@@ -181,7 +181,7 @@ validate_github_token() {
 
     local response
     response=$(curl -s -H "Authorization: token $token" \
-        "https://api.github.com/user" | grep -o '"login"' || echo "")
+        "https://api.github.com/user" | $jqCmd -r '.login // empty')
 
     if [[ -z "$response" ]]; then
         log_error "Invalid GitHub token"
@@ -192,7 +192,7 @@ validate_github_token() {
     if [[ -n "$org" ]]; then
         local org_response
         org_response=$(curl -s -H "Authorization: token $token" \
-            "https://api.github.com/orgs/$org" | grep -o '"login"' || echo "")
+            "https://api.github.com/orgs/$org" | $jqCmd -r '.login // empty')
 
         if [[ -z "$org_response" ]]; then
             log_warning "Cannot access GitHub org '$org' with this token"
@@ -242,8 +242,8 @@ create_slack_app() {
     echo "Creating Slack App:"
 
     # Extract defaults from manifest file
-    local default_name=$(grep -o '"name": "[^"]*"' "$manifest_file" | cut -d'"' -f4)
-    local default_description=$(grep -o '"description": "[^"]*"' "$manifest_file" | cut -d'"' -f4)
+    local default_name=$($jqCmd -r '.name' "$manifest_file")
+    local default_description=$($jqCmd -r '.description' "$manifest_file")
 
     echo ""
     echo "App Configuration:"
@@ -264,9 +264,8 @@ create_slack_app() {
 
     # Create temporary manifest with updated values
     local temp_manifest="/tmp/${app_type}_manifest_$$.json"
-    sed -e "s/\"name\": \"[^\"]*\"/\"name\": \"$custom_name\"/g" \
-        -e "s/\"description\": \"[^\"]*\"/\"description\": \"$custom_description\"/g" \
-        -e "s/\"display_name\": \"[^\"]*\"/\"display_name\": \"$custom_name\"/g" \
+    $jqCmd --arg name "$custom_name" --arg desc "$custom_description" \
+        '.name = $name | .description = $desc | .display_name = $name' \
         "$manifest_file" > "$temp_manifest"
 
     open_browser "https://api.slack.com/apps/"
