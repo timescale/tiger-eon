@@ -1,5 +1,20 @@
 # tiger-eon
 
+## What Can EON Do?
+
+### 📊 Track Latest Project Developments  
+Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
+
+![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/progress-tracking.png)
+
+*Get comprehensive insights into recent developments, and cross-platform project updates.*
+
+### 🔍 Understand Technical Changes via the Github integration
+
+![Screenshot of EON analyzing GitHub code changes and providing technical insights about project modifications and pull requests](./images/github.png)
+
+*Analyze technical changes, review code modifications, and understand the evolution of your projects.*
+
 ## Requirements
 
 * [git](https://git-scm.com/)
