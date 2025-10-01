@@ -542,9 +542,9 @@ start_services() {
 
 # Main function
 main() {
-    #intro_message
-    #check_resume_or_fresh_start
-    #collect_required_tokens
+    intro_message
+    check_resume_or_fresh_start
+    collect_required_tokens
     select_and_configure_mcp_services
     write_env_file
     start_services
