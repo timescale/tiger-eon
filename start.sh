@@ -31,7 +31,7 @@ fi
 
 # Start only the enabled services
 echo "Starting services: $SERVICES"
-docker compose up -d $SERVICES
+docker compose pull && docker compose up -d $SERVICES
 
 echo "Services started successfully!"
 echo "Use 'docker compose ps' to see running services"
