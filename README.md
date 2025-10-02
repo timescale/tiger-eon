@@ -1,8 +1,44 @@
-# tiger-eon
+# Eon — Your Internal Slack Agent
 
-## What Can EON Do?
+Your business already has the answers — in Slack threads, GitHub pull requests, Linear tasks, your docs, and Salesforce service tickets. But those answers are scattered, hard to find, and often forgotten.
 
-### Track Latest Project Developments
+**Eon brings them back to the surface.**
+
+Ask a question in Slack:
+- "What did we ship last week?"
+- "What's blocking the release?"
+- "Summarize the latest GitHub pull requests."
+
+Eon responds instantly, pulling from the tools you already use. No new UI, no new workflow — just answers in Slack, where your team already works.
+
+---
+
+## Why Eon?
+
+- **Unlock hidden value**: Your Slack, GitHub, and Linear data already contain the insights you need. Eon makes them accessible.
+- **Faster decisions**: Instead of searching or asking around, your team can get answers in seconds.
+- **Easy to run**: The agent and MCP servers run statelessly in your own infrastructure, lightweight and simple to deploy.
+- **Seamless with Tiger**: Eon uses a Postgres service (including free services). Prefer to self-host? Any Postgres instance with TimescaleDB works.
+- **Grows with you**: Start with Slack and GitHub today. Add docs, Salesforce, and more tomorrow.
+
+---
+
+## What Eon Can Do
+
+**Available now**
+- **Slack** — Ask questions across your company's conversations and history
+- **GitHub (optional)** — Summarize pull requests, issues, and activity
+- **Linear (optional)** — Stay on top of project tasks and issues
+
+**Coming soon**
+- **Docs** — Search and summarize company knowledge
+- **Salesforce** — Surface customer updates, opportunities, and account insights
+
+---
+
+# Demo
+
+## Track Latest Project Developments
 
 Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
 
@@ -10,11 +46,13 @@ Stay up-to-date with what's happening across your projects and team members with
 
 *Get comprehensive insights into recent developments, and cross-platform project updates.*
 
-### Understand Technical Changes via the Github integration
+## Understand Technical Changes via the Github integration
 
 ![Screenshot of EON analyzing GitHub code changes and providing technical insights about project modifications and pull requests](./images/github.png)
 
 *Analyze technical changes, review code modifications, and understand the evolution of your projects.*
+
+# Setup
 
 ## Requirements
 
@@ -24,38 +62,6 @@ Stay up-to-date with what's happening across your projects and team members with
   * [Slack](https://slack.com/)
   * [GitHub](https://github.com/) (Optional)
   * [Anthropic](https://www.anthropic.com/)
-
-## High-Level Architecture
-
-Eon leverages the [tiger-agent](https://github.com/timescale/tiger-agent) library, which provides Slack event handling with robust event queuing/retrying and TimescaleDB-powered event history.
-
-```mermaid
-graph TB
-    %% slack app mention @eon
-    U[Slack App Mention @agent]
-
-    %% Main Orchestrator
-    E[eon Agent]
-
-    %% External Services (via MCP)
-    GH[GitHub MCP]
-    SL[Slack MCP]
-
-    %% Flow
-    U --> E
-    
-    E --> GH
-    E --> SL
-    
-    %% Link to tiger-agent repository
-    click H "https://github.com/timescale/tiger-agent"
-
-    %% Links to MCP server repositories
-    click GH "https://github.com/timescale/tiger-gh-mcp-server"
-    click SL "https://github.com/timescale/tiger-slack"
-```
-
-## Setup
 
 ## Interactive Setup (Recommended)
 
@@ -142,3 +148,42 @@ threads or channels, and not just from when it was setup. To do so:
 1. Follow the [Slack Docs](https://slack.com/help/articles/201658943-Export-your-workspace-data) on getting an export of your workspace
 2. Download the zip to your computer, and unzip it
 3. Run `./import-slack.sh <path/to/slack/export>` replacing the argument with the actual path to your dump.
+
+# High-Level Architecture
+
+Eon leverages the [tiger-agent](https://github.com/timescale/tiger-agent) library, which provides Slack event handling with robust event queuing/retrying and TimescaleDB-powered event history.
+
+```mermaid
+graph TB
+    %% slack app mention @eon
+    U[Slack App Mention @agent]
+
+    %% Main Orchestrator
+    E[eon Agent]
+
+    %% External Services (via MCP)
+    GH[GitHub MCP]
+    SL[Slack MCP]
+
+    %% Flow
+    U --> E
+
+    E --> GH
+    E --> SL
+
+    %% Link to tiger-agent repository
+    click H "https://github.com/timescale/tiger-agent"
+
+    %% Links to MCP server repositories
+    click GH "https://github.com/timescale/tiger-gh-mcp-server"
+    click SL "https://github.com/timescale/tiger-slack"
+```
+
+* Agent + MCP servers — run statelessly in your infrastructure, easy to deploy and scale.
+* Postgres — state. Use Tiger (with free plans) for seamless setup, or self-host Postgres if you prefer.
+* MCP servers — connect to Slack history, GitHub.
+
+# Contributing
+
+Eon is open source under the Apache 2.0 license.
+Contributions welcome — file issues or PRs in GitHub Issues.
