@@ -9,13 +9,13 @@ fi
 echo "Building services..."
 docker compose build
 
-echo "Pulling latest images..."
-docker compose pull
-
 if [[ "$PGHOST" == "db" ]]; then
     # We start the database service first to give it time to initialize as needed,
     # as the other services depend on it, but since it's optional we cannot rely
     # on the built-in depends_on with condition: service_healthy in docker-compose.yml.
+    echo "Checking for database updates..."
+    docker compose pull db
+
     echo "Starting database service..."
     docker compose up -d db
 
@@ -48,8 +48,12 @@ if check_service_enabled "github"; then
     SERVICES="$SERVICES tiger-gh-mcp-server"
 fi
 
+echo "Configured services to start: $SERVICES"
+echo "Checking for updates..."
+docker compose pull $SERVICES
+
 # Start only the enabled services
-echo "Starting services: $SERVICES"
+echo "Starting services..."
 docker compose up -d $SERVICES
 
 echo "Services started successfully!"
