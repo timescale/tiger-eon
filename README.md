@@ -1,6 +1,6 @@
 # Eon — Your Internal Slack Agent
 
-Your business already has the answers — in Slack threads, GitHub pull requests, Linear tasks, and soon in your docs, Salesforce, and service tickets. But those answers are scattered, hard to find, and often forgotten.
+Your business already has the answers — in Slack threads, GitHub pull requests, Linear tasks, your docs, and Salesforce service tickets. But those answers are scattered, hard to find, and often forgotten.
 
 **Eon brings them back to the surface.**
 
@@ -18,7 +18,7 @@ Eon responds instantly, pulling from the tools you already use. No new UI, no ne
 - **Unlock hidden value**: Your Slack, GitHub, and Linear data already contain the insights you need. Eon makes them accessible.
 - **Faster decisions**: Instead of searching or asking around, your team can get answers in seconds.
 - **Easy to run**: The agent and MCP servers run statelessly in your own infrastructure, lightweight and simple to deploy.
-- **Seamless with Tiger**: Eon connects directly to a Tiger Postgres service (including free services) for storage and memory. Prefer to self-host? Any Postgres instance works.
+- **Seamless with TigerData**: Eon uses a Tiger Postgres service (including free services). Prefer to self-host? Any Postgres instance with TimescaleDB works.
 - **Grows with you**: Start with Slack and GitHub today. Add docs, Salesforce, and more tomorrow.
 
 ---
@@ -27,7 +27,7 @@ Eon responds instantly, pulling from the tools you already use. No new UI, no ne
 
 **Available now**
 - **Slack** — Ask questions across your company's conversations and history
-- **GitHub** — Summarize pull requests, issues, and activity
+- **GitHub (optional)** — Summarize pull requests, issues, and activity
 - **Linear (optional)** — Stay on top of project tasks and issues
 
 **Coming soon**
