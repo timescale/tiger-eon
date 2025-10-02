@@ -18,7 +18,7 @@ Eon responds instantly, pulling from the tools you already use. No new UI, no ne
 - **Unlock hidden value**: Your Slack, GitHub, and Linear data already contain the insights you need. Eon makes them accessible.
 - **Faster decisions**: Instead of searching or asking around, your team can get answers in seconds.
 - **Easy to run**: The agent and MCP servers run statelessly in your own infrastructure, lightweight and simple to deploy.
-- **Seamless with TigerData**: Eon uses a Tiger Postgres service (including free services). Prefer to self-host? Any Postgres instance with TimescaleDB works.
+- **Seamless with Tiger**: Eon uses a Postgres service (including free services). Prefer to self-host? Any Postgres instance with TimescaleDB works.
 - **Grows with you**: Start with Slack and GitHub today. Add docs, Salesforce, and more tomorrow.
 
 ---
