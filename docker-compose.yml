@@ -19,9 +19,6 @@ services:
 
   tiger-agent:
     image: ghcr.io/timescale/tiger-agent:0.0.2
-    depends_on:
-      db:
-        condition: service_healthy
     environment: &env_vars
       PGHOST: ${PGHOST}
       PGPORT: ${PGPORT}
@@ -50,8 +47,6 @@ services:
 
   tiger-slack-ingest:
     image: ghcr.io/timescale/tiger-slack-ingest:0.1.3
-    depends_on:
-      - db
     environment:
       <<: *env_vars
       SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
@@ -59,8 +54,6 @@ services:
 
   tiger-slack-mcp-server:
     image: ghcr.io/timescale/tiger-slack-mcp:0.1.2
-    depends_on:
-      - db
     environment:
       <<: *env_vars
       PORT: 80
@@ -71,8 +64,6 @@ services:
 
   tiger-gh-mcp-server:
     image: ghcr.io/timescale/tiger-github-mcp:0.1.1
-    depends_on:
-      - db
     environment:
       PORT: 80
       GITHUB_ORG: ${GITHUB_ORG}

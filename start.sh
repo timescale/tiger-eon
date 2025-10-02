@@ -9,8 +9,27 @@ fi
 echo "Building services..."
 docker compose build
 
+echo "Pulling latest images..."
+docker compose pull
+
+if [[ "$PGHOST" == "db" ]]; then
+    # We start the database service first to give it time to initialize as needed,
+    # as the other services depend on it, but since it's optional we cannot rely
+    # on the built-in depends_on with condition: service_healthy in docker-compose.yml.
+    echo "Starting database service..."
+    docker compose up -d db
+
+    echo -n "Waiting for database to be ready..."
+    until PGHOST=127.0.0.1 PGPORT="${PGPORT}" PGDATABASE="${PGDATABASE}" PGUSER="${PGUSER}" pg_isready -q; do
+        echo -n "."
+        sleep 1
+    done
+    echo ""
+    echo "Database is ready!"
+fi
+
 # Build list of services to start
-SERVICES="tiger-agent db tiger-slack-mcp-server tiger-slack-ingest"
+SERVICES="tiger-agent tiger-slack-mcp-server tiger-slack-ingest"
 
 # Add MCP services that are not disabled (check mcp_config.json)
 check_service_enabled() {
@@ -31,7 +50,7 @@ fi
 
 # Start only the enabled services
 echo "Starting services: $SERVICES"
-docker compose pull && docker compose up -d $SERVICES
+docker compose up -d $SERVICES
 
 echo "Services started successfully!"
 echo "Use 'docker compose ps' to see running services"
