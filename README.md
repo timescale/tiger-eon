@@ -1,4 +1,14 @@
-# tiger-eon
+# Eon — Your Internal Slack Agent
+
+Your team already knows the answers — they’re just buried. In Slack threads, GitHub pull requests, Linear tasks, your docs, and Salesforce support tickets.
+
+Eon helps you actually use that knowledge.
+
+* Ask in Slack, get answers back — no more digging through threads or pinging teammates.
+* Works with what you’ve got — start with Slack and GitHub today, add more systems as you go.
+* Simple to run — the agent runs in your own infra, uses Tiger Cloud Postgres (including free plans), and is live in minutes.
+* Real impact — faster updates, clearer progress, less “where’s that info?” overhead.
+* Spin it up once, and suddenly your team’s history becomes usable knowledge.
 
 ## What Can EON Do?
 
@@ -43,10 +53,10 @@ graph TB
 
     %% Flow
     U --> E
-    
+
     E --> GH
     E --> SL
-    
+
     %% Link to tiger-agent repository
     click H "https://github.com/timescale/tiger-agent"
 
