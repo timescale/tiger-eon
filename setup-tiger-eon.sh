@@ -181,7 +181,7 @@ check_use_tiger() {
         log_success "Will use Tiger Cloud Database"
     else
         USE_TIGER_CLOUD="N"
-        log_info "Will local docker-compose database"
+        log_info "Will use local docker-compose database"
     fi
 
     return 0
