@@ -15,6 +15,14 @@ NC='\033[0m' # No Color
 selected_services=()
 disabled_services=()
 
+# Database information
+TIGER_SERVICE_ID=""
+PGHOST=""
+PGPORT=""
+PGDATABASE=""
+PGUSER=""
+PGPASSWORD=""
+
 # Manifest file paths
 INGEST_MANIFEST_PATH=""
 AGENT_MANIFEST_PATH="slack-app-manifest.json"
@@ -57,6 +65,17 @@ if [ ! -f "$jqCmd" ]; then
     echo Downloading $jqDl to "$jqCmd"
     curl -L -o "$jqCmd" $jqDl
     chmod +x "$jqCmd"
+fi
+
+tigerCmd=$(which tiger 2>/dev/null || echo "$downloadDir/tiger")
+if [ ! -f "$tigerCmd" ]; then
+    tigerVersion=$(curl -s https://tiger-cli-releases.s3.us-east-1.amazonaws.com/install/latest.txt)
+    tigerDl=https://tiger-cli-releases.s3.us-east-1.amazonaws.com/releases/${tigerVersion}/tiger-cli_${uname}_$(arch).tar.gz
+    echo "Downloading ${tigerDl} to ${tigerCmd}"
+    curl -L -o "$downloadDir/tiger-cli.tar.gz" "${tigerDl}"
+    tar -xzf "$downloadDir/tiger-cli.tar.gz" -C "${downloadDir}" "tiger"
+    rm -f "$downloadDir/tiger-cli.tar.gz"
+    chmod +x "$tigerCmd"
 fi
 
 # Logging functions
@@ -108,19 +127,20 @@ intro_message() {
     echo "I'm going to guide you through the setup"
     echo "with the services you need."
     echo ""
-    echo "The core install includes the following:" 
+    echo "The core install includes the following:"
     echo "  - a Slack App for the ingest service that will receive all messages/reactions from public channels"
     echo "  - a Slack App for the agent that will receive @mentions to it"
     echo "  - a TimescaleDB instance to store the above data"
     echo ""
     echo "This is the workflow that we will use:"
-    echo "1. Create Slack App for Ingest & gather tokens"
-    echo "2. Create Slack App for Agent & gather tokens"
-    echo "3. Gather Anthropic API token"
-    echo "4. Determine which optional MCP servers to configure"
-    echo "5. Gather required variables for optional MCP servers"
-    echo "6. Write the .env file"
-    echo "7. Optionally, spin up the selected services"
+    echo "1. Choose between using free Tiger Cloud DB or local Docker DB"
+    echo "2. Create Slack App for Ingest & gather tokens"
+    echo "3. Create Slack App for Agent & gather tokens"
+    echo "4. Gather Anthropic API token"
+    echo "5. Determine which optional MCP servers to configure"
+    echo "6. Gather required variables for optional MCP servers"
+    echo "7. Write the .env file"
+    echo "8. Optionally, spin up the selected services"
     echo ""
 
     # Continue prompt
@@ -151,6 +171,104 @@ check_resume_or_fresh_start() {
             fi
         fi
     fi
+}
+
+# Check Tiger authentication status
+check_use_tiger() {
+    read -p "Do you want to use a free tier Tiger Cloud Database? [y/N]: " choice
+    if [[ $choice =~ ^[Yy] ]]; then
+        USE_TIGER_CLOUD="Y"
+        log_success "Will use Tiger Cloud Database"
+    else
+        USE_TIGER_CLOUD="N"
+        log_info "Will local docker-compose database"
+    fi
+
+    return 0
+}
+
+check_tiger_auth() {
+    log_info "Checking Tiger authentication..."
+
+    if $tigerCmd auth whoami &> /dev/null; then
+        log_success "Already authenticated with Tiger"
+        return 0
+    else
+        log_info "Not authenticated with Tiger, starting login..."
+        $tigerCmd auth login
+    fi
+}
+
+check_tiger_db_status() {
+    if [[ -z "$TIGER_SERVICE_ID" ]]; then
+        return 0
+    fi
+
+    echo -n "$(echo -e "${BLUE}ℹ${NC}") Waiting for Tiger database to be ready..."
+
+    while true; do
+        local status
+        status=$(${tigerCmd} service describe --output json "${TIGER_SERVICE_ID}" 2>/dev/null | $jqCmd -r '.status // empty')
+
+        if [[ "$status" == "READY" ]]; then
+            echo ""
+            log_success "Tiger database is ready"
+            return 0
+        fi
+
+        echo -n "."
+        sleep 30
+    done
+}
+
+create_tiger_db() {
+    log_info "Creating Tiger database..."
+
+    createResponse=$(${tigerCmd} service create --free --no-wait --name tiger-eon 2>&1)
+
+    # Parse service ID from response
+    TIGER_SERVICE_ID=$(echo "$createResponse" | grep "Service ID:" | sed 's/.*Service ID: \([^ ]*\).*/\1/')
+
+    if [[ -z "$TIGER_SERVICE_ID" ]]; then
+        log_error "Failed to parse service ID from response"
+        return 1
+    fi
+
+    log_success "Tiger database created with service ID: $TIGER_SERVICE_ID"
+
+    # Get connection string
+    log_info "Retrieving database connection string..."
+
+    dsn=$(${tigerCmd} db connection-string --with-password ${TIGER_SERVICE_ID} 2>&1)
+
+    # Parse DSN: postgresql://user:password@host:port/database?params
+    PGUSER=$(echo "$dsn" | sed -n 's|postgresql://\([^:]*\):.*|\1|p')
+    PGPASSWORD=$(echo "$dsn" | sed -n 's|postgresql://[^:]*:\([^@]*\)@.*|\1|p')
+    PGHOST=$(echo "$dsn" | sed -n 's|postgresql://[^@]*@\([^:]*\):.*|\1|p')
+    PGPORT=$(echo "$dsn" | sed -n 's|postgresql://[^@]*@[^:]*:\([^/]*\)/.*|\1|p')
+    PGDATABASE=$(echo "$dsn" | sed -n 's|postgresql://[^/]*/\([^?]*\).*|\1|p')
+
+    if [[ -z "$PGHOST" || -z "$PGPORT" || -z "$PGDATABASE" || -z "$PGUSER" || -z "$PGPASSWORD" ]]; then
+        log_error "Failed to parse database connection string"
+        return 1
+    fi
+
+    log_success "Database credentials obtained successfully"
+    return 0
+}
+
+setup_tiger_db() {
+    check_use_tiger
+
+    if [[ "$USE_TIGER_CLOUD" == "N" ]]; then
+        log_info "Skipping Tiger Cloud database setup"
+        return 0
+    fi
+
+    check_tiger_auth
+    create_tiger_db
+
+    return 0
 }
 
 # Validate tokens with API calls
@@ -504,6 +622,17 @@ write_env_file() {
         "GITHUB_TOKEN:$GITHUB_TOKEN_VAL"
     )
 
+    # Only add PG* variables if TIGER_SERVICE_ID is set
+    if [[ -n "$TIGER_SERVICE_ID" ]]; then
+        token_vars+=(
+            "PGHOST:$PGHOST"
+            "PGPORT:$PGPORT"
+            "PGDATABASE:$PGDATABASE"
+            "PGUSER:$PGUSER"
+            "PGPASSWORD:$PGPASSWORD"
+        )
+    fi
+
     for token_var in "${token_vars[@]}"; do
         local key="${token_var%:*}"
         local value="${token_var#*:}"
@@ -604,9 +733,11 @@ main() {
     check_manifest_files
     intro_message
     check_resume_or_fresh_start
+    setup_tiger_db
     collect_required_tokens
     select_and_configure_mcp_services
     write_env_file
+    check_tiger_db_status
     start_services
     cleanup
 }
