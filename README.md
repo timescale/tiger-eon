@@ -36,9 +36,9 @@ Eon responds instantly, pulling from the tools you already use. No new UI, no ne
 
 ---
 
-## Demo
+# Demo
 
-### Track Latest Project Developments
+## Track Latest Project Developments
 
 Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
 
@@ -46,15 +46,15 @@ Stay up-to-date with what's happening across your projects and team members with
 
 *Get comprehensive insights into recent developments, and cross-platform project updates.*
 
-### Understand Technical Changes via the Github integration
+## Understand Technical Changes via the Github integration
 
 ![Screenshot of EON analyzing GitHub code changes and providing technical insights about project modifications and pull requests](./images/github.png)
 
 *Analyze technical changes, review code modifications, and understand the evolution of your projects.*
 
-## Setup
+# Setup
 
-### Requirements
+## Requirements
 
 * [git](https://git-scm.com/)
 * [Docker](https://www.docker.com/)
@@ -63,7 +63,7 @@ Stay up-to-date with what's happening across your projects and team members with
   * [GitHub](https://github.com/) (Optional)
   * [Anthropic](https://www.anthropic.com/)
 
-### Interactive Setup (Recommended)
+## Interactive Setup (Recommended)
 
 ``` bash
 git clone git@github.com:timescale/tiger-eon.git
@@ -71,7 +71,7 @@ cd tiger-eon
 ./setup-tiger-eon.sh
 ```
 
-### Manual Setup
+## Manual Setup
 
 ```bash
 git clone git@github.com:timescale/tiger-eon.git
@@ -79,20 +79,20 @@ cd tiger-eon
 cp .env.sample .env
 ```
 
-#### Setup Anthropic Token
+### Setup Anthropic Token
 
 1. Go to https://console.anthropic.com/settings/keys
 2. Click "Create Key" and give it a workspace and name
 3. Copy the value into `.env` where it says `ANTHROPIC_API_KEY`
 
-#### Setup GitHub token
+### Setup GitHub token
 
 1. Go to https://github.com/settings/tokens/new?description=Tiger%20Agent&scopes=repo,read:org
 2. Change the token name, set expiration date, and then hit "Generate token"
 3. Copy the value into `.env` where it says `GITHUB_TOKEN`
 4. Set the `GITHUB_ORG` value in `.env` to your GitHub organization (e.g. if https://github.com/timescale was your org page, then set `GITHUB_ORG=timescale`).
 
-#### Setup Slack Ingest/MCP
+### Setup Slack Ingest/MCP
 
 1. Go to https://api.slack.com/apps/
 2. Hit "Create New App" and select "From a manifest"
@@ -106,7 +106,7 @@ cp .env.sample .env
 10. Grant the necessary permission and advance to the next page
 11. Copy the "Bot User OAuth Token" (starts with `xoxb-`) into `.env` file where it says `SLACK_INGEST_BOT_TOKEN`
 
-#### Setup Slack Agent
+### Setup Slack Agent
 
 Follow the steps for seting up Slack Ingest/MCP, except:
 
@@ -114,7 +114,7 @@ Follow the steps for seting up Slack Ingest/MCP, except:
 * For step (8), set the token to `SLACK_AGENT_APP_TOKEN`
 * For step (11), set the token to `SLACK_AGENT_BOT_TOKEN`
 
-#### Setup Logfire (Optional)
+### Setup Logfire (Optional)
 
 1. Log into https://logfire.pydantic.dev/login (set region as necessary)
 2. Under "Projects", click "New project"
@@ -122,7 +122,7 @@ Follow the steps for seting up Slack Ingest/MCP, except:
 4. On next page, click "Generate Write Token"
 5. Copy that into the `.env` file under `LOGFIRE_TOKEN`
 
-### Start Services
+## Start Services
 
 To start only configured services (based on `mcp_config.json`):
 
@@ -136,11 +136,11 @@ To start all services:
 docker compose up -d --build
 ```
 
-### Customize
+## Customize
 
 You can customize the MCP servers by [editing a configuration file](/docs/mcp-config.md). To modify the system or user prompts, [edit the Jinja2 templates](/docs/prompts.md).
 
-### Import Slack Data
+## Import Slack Data
 
 To make the Slack MCP server more powerful, you can also restore a dump of your slack data, allowing eon to answer questions about historical
 threads or channels, and not just from when it was setup. To do so:
@@ -149,7 +149,7 @@ threads or channels, and not just from when it was setup. To do so:
 2. Download the zip to your computer, and unzip it
 3. Run `./import-slack.sh <path/to/slack/export>` replacing the argument with the actual path to your dump.
 
-## High-Level Architecture
+# High-Level Architecture
 
 Eon leverages the [tiger-agent](https://github.com/timescale/tiger-agent) library, which provides Slack event handling with robust event queuing/retrying and TimescaleDB-powered event history.
 
@@ -183,7 +183,7 @@ graph TB
 * Postgres — state. Use Tiger (with free plans) for seamless setup, or self-host Postgres if you prefer.
 * MCP servers — connect to Slack history, GitHub.
 
-## Contributing
+# Contributing
 
 Eon is open source under the Apache 2.0 license.
 Contributions welcome — file issues or PRs in GitHub Issues.
