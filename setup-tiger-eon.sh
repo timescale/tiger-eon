@@ -124,8 +124,7 @@ intro_message() {
     echo "=================================================="
     echo ""
     echo "Hi! I'm eon, a TigerData agent!"
-    echo "I'm going to guide you through the setup"
-    echo "with the services you need."
+    echo "I'm going to guide you through the setup with the services you need."
     echo ""
     echo "The core install includes the following:"
     echo "  - a Slack App for the ingest service that will receive all messages/reactions from public channels"
@@ -208,7 +207,7 @@ check_tiger_db_status() {
 
     while true; do
         local status
-        status=$(${tigerCmd} service describe --output json "${TIGER_SERVICE_ID}" 2>/dev/null | $jqCmd -r '.status // empty')
+        status=$(${tigerCmd} service describe -o json "${TIGER_SERVICE_ID}" 2>/dev/null | $jqCmd -r '.status // empty')
 
         if [[ "$status" == "READY" ]]; then
             echo ""
@@ -224,10 +223,9 @@ check_tiger_db_status() {
 create_tiger_db() {
     log_info "Creating Tiger database..."
 
-    createResponse=$(${tigerCmd} service create --free --no-wait --name tiger-eon 2>&1)
+    createResponse=$(${tigerCmd} service create --free --no-wait --name tiger-eon --with-password -o json 2>/dev/null)
 
-    # Parse service ID from response
-    TIGER_SERVICE_ID=$(echo "$createResponse" | grep "Service ID:" | sed 's/.*Service ID: \([^ ]*\).*/\1/')
+    TIGER_SERVICE_ID=$(${jqCmd} -r '.service_id // empty' <<< "$createResponse")
 
     if [[ -z "$TIGER_SERVICE_ID" ]]; then
         log_error "Failed to parse service ID from response"
@@ -236,17 +234,18 @@ create_tiger_db() {
 
     log_success "Tiger database created with service ID: $TIGER_SERVICE_ID"
 
-    # Get connection string
-    log_info "Retrieving database connection string..."
-
-    dsn=$(${tigerCmd} db connection-string --with-password ${TIGER_SERVICE_ID} 2>&1)
+    dsn=$(${jqCmd} -r '.connection_string // empty' <<< "$createResponse")
+    if [[ -z "$dsn" ]]; then
+        log_error "Failed to get connection string from response"
+        return 1
+    fi
 
     # Parse DSN: postgresql://user:password@host:port/database?params
     PGUSER=$(echo "$dsn" | sed -n 's|postgresql://\([^:]*\):.*|\1|p')
-    PGPASSWORD=$(echo "$dsn" | sed -n 's|postgresql://[^:]*:\([^@]*\)@.*|\1|p')
-    PGHOST=$(echo "$dsn" | sed -n 's|postgresql://[^@]*@\([^:]*\):.*|\1|p')
-    PGPORT=$(echo "$dsn" | sed -n 's|postgresql://[^@]*@[^:]*:\([^/]*\)/.*|\1|p')
     PGDATABASE=$(echo "$dsn" | sed -n 's|postgresql://[^/]*/\([^?]*\).*|\1|p')
+    PGPASSWORD=$(${jqCmd} -r '.initial_password // empty' <<< "$createResponse")
+    PGHOST=$(${jqCmd} -r '.endpoint.host // empty' <<< "$createResponse")
+    PGPORT=$(${jqCmd} -r '.endpoint.port // empty' <<< "$createResponse")
 
     if [[ -z "$PGHOST" || -z "$PGPORT" || -z "$PGDATABASE" || -z "$PGUSER" || -z "$PGPASSWORD" ]]; then
         log_error "Failed to parse database connection string"
@@ -274,7 +273,6 @@ setup_tiger_db() {
 # Validate tokens with API calls
 validate_slack_tokens() {
     local bot_token="$1"
-    local app_token="$2"
 
     log_info "Validating Slack tokens..."
 
@@ -360,6 +358,32 @@ get_ingest_manifest() {
     fi
 }
 
+print_and_copy() {
+    local text="$1"
+
+    echo "----------------------------------------"
+    echo ""
+    echo "$text"
+    echo ""
+    echo "----------------------------------------"
+    echo ""
+    
+    if command -v pbcopy &> /dev/null; then
+        # macOS
+        echo "$text" | pbcopy
+    elif command -v xclip &> /dev/null; then
+        # Linux X11
+        echo "$text" | xclip -selection clipboard
+    elif command -v wl-copy &> /dev/null; then
+        # Linux Wayland
+        echo "$text" | wl-copy
+    else
+        return 0
+    fi
+    echo "(copied to the clipboard, you can just paste it)"
+    echo ""
+}
+
 # Create Slack app with specified manifest file
 create_slack_app() {
     local manifest_file="$1"
@@ -376,12 +400,9 @@ create_slack_app() {
         return 1
     fi
 
-    echo "This will guide you through the Slack app setup process."
-    read -p "Press any key to open the Slack API site in your browser..."
-    echo ""
-
     # Interactive Slack App Setup
     echo "Creating Slack App:"
+    echo "This will guide you through the Slack app setup process."
 
     # Extract defaults from manifest file
     local default_name=$($jqCmd -r '.display_information.name' "$manifest_file")
@@ -410,6 +431,7 @@ create_slack_app() {
         '.display_information.name = $name | .display_information.description = $desc | .features.bot_user.display_name = $name' \
         "$manifest_file" > "$temp_manifest"
 
+    echo ""
     open_browser "https://api.slack.com/apps/"
 
     echo "1. Click 'Create New App' → 'From a manifest' → Choose your workspace"
@@ -419,11 +441,7 @@ create_slack_app() {
     # Show customized manifest file content
     echo ""
     echo "App Manifest for $app_type:"
-    echo "----------------------------------------"
-    cat "$temp_manifest"
-    echo ""
-    echo "----------------------------------------"
-    echo ""
+    print_and_copy "$(cat "$temp_manifest")"
 
     echo "2. Copy the manifest shown above and paste it into the App creation wizard, then click 'Next' and 'Create'"
 
@@ -435,7 +453,7 @@ create_slack_app() {
 
     echo ""
     echo "3. Navigate to: Basic Information → App-Level Tokens"
-    echo "4. Click 'Generate Token and Scopes' → Add 'connections:write' scope → Generate"
+    echo "4. Click 'Generate Token and Scopes' → Enter a Token Name → Add 'connections:write' scope → Generate"
     echo ""
 
     local slack_app_token
