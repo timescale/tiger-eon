@@ -18,7 +18,7 @@ services:
       start_period: 10s
 
   tiger-agent:
-    image: ghcr.io/timescale/tiger-agent:0.0.2
+    image: ghcr.io/timescale/tiger-agent:0.0.3
     environment: &env_vars
       PGHOST: ${PGHOST}
       PGPORT: ${PGPORT}
