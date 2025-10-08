@@ -42,13 +42,13 @@ Eon responds instantly, pulling from the tools you already use. No new UI, no ne
 
 Stay up-to-date with what's happening across your projects and team members with intelligent progress tracking.
 
-![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/progress.png)
+![Screenshot displaying EON's progress tracking interface showing recent project developments and team member activity insights](./images/slack-synthesize.png)
 
 *Get comprehensive insights into recent developments, and cross-platform project updates.*
 
 ## Understand Technical Changes via the Github integration
 
-![Screenshot of EON analyzing GitHub code changes and providing technical insights about project modifications and pull requests](./images/github.png)
+![Screenshot of EON analyzing GitHub code changes and providing technical insights about project modifications and pull requests](./images/github-mcp.png)
 
 *Analyze technical changes, review code modifications, and understand the evolution of your projects.*
 
