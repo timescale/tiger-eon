@@ -7,5 +7,9 @@
     "url": "http://tiger-gh-mcp-server/mcp",
     "tool_prefix": "github",
     "disabled": false
+  },
+  "linear": {
+    "url": "http://tiger-linear-mcp-server/mcp",
+    "disabled": false
   }
 }
