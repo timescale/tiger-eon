@@ -467,8 +467,9 @@ create_slack_app() {
     done
 
     echo ""
-    echo "5. Navigate to: Install App → Click 'Install to [Workspace]'"
-    echo "6. After installation, copy the 'Bot User OAuth Token'"
+    echo "5. Navigate to: App Home → Show Tabs → Enable the Messages tab setting and check 'Allow users to send Slash commands and messages from the messages tab'"
+    echo "6. Navigate to: Install App → Click 'Install to [Workspace]'"
+    echo "7. After installation, copy the 'Bot User OAuth Token'"
     echo ""
 
     local slack_bot_token
