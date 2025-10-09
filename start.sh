@@ -48,6 +48,10 @@ if check_service_enabled "github"; then
     SERVICES="$SERVICES tiger-gh-mcp-server"
 fi
 
+if check_service_enabled "linear"; then
+    SERVICES="$SERVICES tiger-linear-mcp-server"
+fi
+
 echo "Configured services to start: $SERVICES"
 echo "Checking for updates..."
 docker compose pull $SERVICES

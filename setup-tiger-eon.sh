@@ -36,6 +36,7 @@ ANTHROPIC_API_KEY_VAL=""
 LOGFIRE_TOKEN_VAL=""
 GITHUB_ORG_VAL=""
 GITHUB_TOKEN_VAL=""
+LINEAR_API_KEY_VAL=""
 
 # https://github.com/murrayju/build-strap-cli/blob/b2620ebcceffe0a905a0aa9b49b871aec6b4e6e8/bs#L17
 if [ "$(getconf LONG_BIT)" == "64" ]; then
@@ -334,6 +335,27 @@ validate_github_token() {
     return 0
 }
 
+validate_linear_token() {
+    local token="$1"
+
+    log_info "Validating Linear API key..."
+
+    local response
+    response=$(curl -s -H "Authorization: $token" \
+        -H "Content-Type: application/json" \
+        "https://api.linear.app/graphql" \
+        -d '{"query":"query { viewer { id } }"}' \
+        | grep -o '"id"' || echo "")
+
+    if [[ -z "$response" ]]; then
+        log_error "Invalid Linear API key"
+        return 1
+    fi
+
+    log_success "Linear API key validated"
+    return 0
+}
+
 fetch_manifest() {
     local name="$1"
     local uri="$2"
@@ -553,9 +575,10 @@ select_and_configure_mcp_services() {
     echo ""
 
     # Service selection
-    local services=("github")
+    local services=("github" "linear")
     local service_descriptions=(
         "github: GitHub repository integration, allowing for fetching of PRs and commits"
+        "linear: Linear integration, allowing for fetching of issues"
     )
 
     for i in "${!services[@]}"; do
@@ -585,6 +608,9 @@ select_and_configure_mcp_services() {
         case $service in
             github)
                 collect_github_tokens
+                ;;
+            linear)
+                collect_linear_tokens
                 ;;
         esac
     done
@@ -622,6 +648,27 @@ collect_github_tokens() {
     done
 }
 
+collect_linear_tokens() {
+    echo ""
+    echo "📐 Linear Configuration"
+    open_browser "https://linear.app/settings/account/security"
+    echo "Create a Linear API key"
+    echo ""
+
+    while true; do
+        read -p "LINEAR_API_KEY: " linear_key
+
+        if validate_linear_token "$linear_key"; then
+            LINEAR_API_KEY_VAL="$linear_key"
+            break
+        else
+            log_error "Please check your Linear API key and try again"
+            read -p "Retry? [Y/n]: " retry
+            [[ $retry =~ ^[Nn] ]] && break
+        fi
+    done
+}
+
 # Write environment file
 write_env_file() {
     echo ""
@@ -643,6 +690,7 @@ write_env_file() {
         "SLACK_INGEST_BOT_TOKEN:$SLACK_INGEST_BOT_TOKEN_VAL"
         "SLACK_INGEST_APP_TOKEN:$SLACK_INGEST_APP_TOKEN_VAL"
         "ANTHROPIC_API_KEY:$ANTHROPIC_API_KEY_VAL"
+        "LINEAR_API_KEY:$LINEAR_API_KEY_VAL"
         "LOGFIRE_TOKEN:$LOGFIRE_TOKEN_VAL"
         "GITHUB_ORG:$GITHUB_ORG_VAL"
         "GITHUB_TOKEN:$GITHUB_TOKEN_VAL"
