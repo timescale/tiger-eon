@@ -92,7 +92,7 @@ check_manifest_files() {
     INGEST_MANIFEST_PATH=$(fetch_manifest "ingest" "https://raw.githubusercontent.com/timescale/tiger-slack/main/slack-app-manifest.json")
     
     # Download agent manifest from tiger-agents-for-work repository
-    AGENT_MANIFEST_PATH=$(fetch_manifest "agent" "https://raw.githubusercontent.com/timescale/tiger-agents-for-work/refs/heads/main/slack-manifest.json")
+    AGENT_MANIFEST_PATH=$(fetch_manifest "agent" "https://raw.githubusercontent.com/timescale/tiger-agents-for-work/main/slack-manifest.json")
 }
 
 # Browser opening function
