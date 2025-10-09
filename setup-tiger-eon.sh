@@ -25,7 +25,7 @@ PGPASSWORD=""
 
 # Manifest file paths
 INGEST_MANIFEST_PATH=""
-AGENT_MANIFEST_PATH="slack-app-manifest.json"
+AGENT_MANIFEST_PATH=""
 
 # Token storage - using regular variables instead of associative array for compatibility
 SLACK_AGENT_BOT_TOKEN_VAL=""
@@ -89,19 +89,10 @@ check_manifest_files() {
     log_info "Checking manifest files..."
 
     # Download ingest manifest from tiger-slack repository
-    INGEST_MANIFEST_PATH=$(get_ingest_manifest)
-    if [[ -z "$INGEST_MANIFEST_PATH" ]]; then
-        log_error "Failed to download ingest manifest, please create an issue here: https://github.com/timescale/tiger-eon/issues/"
-        exit 1
-    fi
-    log_success "Ingest manifest ready"
-
-    # Check local agent manifest
-    if [[ ! -f "$AGENT_MANIFEST_PATH" ]]; then
-        log_error "Agent manifest file '$AGENT_MANIFEST_PATH' not found, please create an issue here: https://github.com/timescale/tiger-eon/issues"
-        exit 1
-    fi
-    log_success "Agent manifest found"
+    INGEST_MANIFEST_PATH=$(fetch_manifest "ingest" "https://raw.githubusercontent.com/timescale/tiger-slack/main/slack-app-manifest.json")
+    
+    # Download agent manifest from tiger-agents-for-work repository
+    AGENT_MANIFEST_PATH=$(fetch_manifest "agent" "https://raw.githubusercontent.com/timescale/tiger-agents-for-work/main/slack-manifest.json")
 }
 
 # Browser opening function
@@ -343,17 +334,19 @@ validate_github_token() {
     return 0
 }
 
-# Download ingest manifest from tiger-slack repository
-get_ingest_manifest() {
-    local ingest_manifest="/tmp/ingest-manifest-$$.json"
+fetch_manifest() {
+    local name="$1"
+    local uri="$2"
 
-    log_info "Downloading ingest app manifest from tiger-slack repository..." >&2
+    local agent_manifest="/tmp/slack-$name-manifest-$$.json"
 
-    if curl -s -o "$ingest_manifest" "https://raw.githubusercontent.com/timescale/tiger-slack/main/slack-app-manifest.json"; then
-        log_success "Ingest manifest downloaded successfully" >&2
-        echo "$ingest_manifest"
+    log_info "Downloading $name app manifest from $uri..." >&2
+
+    if curl -s -o "$agent_manifest" "$uri"; then
+        log_success "Successfully downloaded $name manifest" >&2
+        echo "$agent_manifest"
     else
-        log_error "Failed to download ingest manifest from GitHub" >&2
+        log_error "Failed to download $name manifest, please create an issue here: https://github.com/timescale/tiger-eon/issues/"
         exit 1
     fi
 }
@@ -390,6 +383,8 @@ create_slack_app() {
     local app_type="$2"
     local bot_token_var="$3"
     local app_token_var="$4"
+    local name="${5:-}"
+    local description="${6:-}"
 
     echo "**** Slack App Creation - $app_type  ****"
     echo ""
@@ -404,9 +399,21 @@ create_slack_app() {
     echo "Creating Slack App:"
     echo "This will guide you through the Slack app setup process."
 
-    # Extract defaults from manifest file
-    local default_name=$($jqCmd -r '.display_information.name' "$manifest_file")
-    local default_description=$($jqCmd -r '.display_information.description' "$manifest_file")
+    # Extract defaults from manifest file or use provided parameters
+    local default_name
+    local default_description
+
+    if [[ -n "$name" ]]; then
+        default_name="$name"
+    else
+        default_name=$($jqCmd -r '.display_information.name' "$manifest_file")
+    fi
+
+    if [[ -n "$description" ]]; then
+        default_description="$description"
+    else
+        default_description=$($jqCmd -r '.display_information.description' "$manifest_file")
+    fi
 
     echo ""
     echo "App Configuration:"
@@ -467,8 +474,9 @@ create_slack_app() {
     done
 
     echo ""
-    echo "5. Navigate to: Install App → Click 'Install to [Workspace]'"
-    echo "6. After installation, copy the 'Bot User OAuth Token'"
+    echo "5. Navigate to: App Home → Show Tabs → Enable the Messages tab setting and check 'Allow users to send Slash commands and messages from the messages tab'"
+    echo "6. Navigate to: Install App → Click 'Install to [Workspace]'"
+    echo "7. After installation, copy the 'Bot User OAuth Token'"
     echo ""
 
     local slack_bot_token
@@ -503,7 +511,7 @@ collect_required_tokens() {
 
     # Create both Slack apps using pre-checked manifest files
     create_slack_app "$INGEST_MANIFEST_PATH" "Ingest" "SLACK_INGEST_BOT_TOKEN_VAL" "SLACK_INGEST_APP_TOKEN_VAL"
-    create_slack_app "$AGENT_MANIFEST_PATH" "Agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL"
+    create_slack_app "$AGENT_MANIFEST_PATH" "Agent" "SLACK_AGENT_BOT_TOKEN_VAL" "SLACK_AGENT_APP_TOKEN_VAL" "eon" "TigerData Knowledge Base Agent"
 
     # Anthropic API key
     echo "🤖 Anthropic Configuration"
