@@ -75,5 +75,12 @@ services:
     ports:
       - "3002:80"
 
+  tiger-linear-mcp-server:
+    image: ghcr.io/timescale/tiger-linear-mcp:latest
+    environment:
+      PORT: 80
+      LINEAR_API_KEY: ${LINEAR_API_KEY}
+    ports:
+      - "3003:80"
 volumes:
   postgres_data:
