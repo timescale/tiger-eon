@@ -68,35 +68,26 @@ if [ ! -f "$jqCmd" ]; then
     chmod +x "$jqCmd"
 fi
 
-localTiger=$(echo "$downloadDir/tiger")
-tigerCmd=$(echo "$localTiger")
+localTiger="$downloadDir/tiger"
+tigerCmd=$(which tiger 2>/dev/null || echo "$localTiger")
 latestTigerVersion=$(curl -s https://cli.tigerdata.com/latest.txt)
 latestTigerVersion=${latestTigerVersion#v}
 
-# TODO: rework this block once https://github.com/timescale/tiger-cli/pull/54 is merged
-
-# If the user has a version of tiger cli in ./download or they don't have the CLI at all,
-# then download the latest version to ./download/tiger
-if [ ! -f "$tigerCmd" ] || [ "$tigerCmd" = "$localTiger" ]; then
-    if [ -f "$tigerCmd" ]; then
-        tigerVersion=$("$tigerCmd" version | awk '/^Tiger CLI/ {print $3}')
-    else
-        tigerVersion="N/A"
-    fi
-    echo "Latest tiger version: $latestTigerVersion, installed: $tigerVersion"
-    if [ "$tigerVersion" != "$latestTigerVersion" ]; then
-        tigerDl=https://cli.tigerdata.com/releases/v${latestTigerVersion}/tiger-cli_${uname}_$(arch).tar.gz
-        echo "Downloading ${tigerDl} to ${tigerCmd}"
-        curl -L -o "$downloadDir/tiger-cli.tar.gz" "${tigerDl}"
-        tar -xzf "$downloadDir/tiger-cli.tar.gz" -C "${downloadDir}" "tiger"
-        rm -f "$downloadDir/tiger-cli.tar.gz"
-        chmod +x "$tigerCmd"
-    fi
+# If the CLI is outdated or missing, download it locally
+if [ -f "$tigerCmd" ]; then
+    tigerVersion=$("${tigerCmd}" version -o bare || echo "N/A")
 else
-    # Print out the version if using system tiger, just for info
-    # TODO: use `tiger version --check` once available
-    tigerVersion=$("$tigerCmd" version | awk '/^Tiger CLI/ {print $3}')
-    echo "Latest tiger version: $latestTigerVersion, installed: $tigerVersion"
+    tigerVersion="N/A"
+fi
+echo "Latest tiger version: ${latestTigerVersion}, installed: ${tigerVersion}"
+if [ "${tigerVersion}" != "${latestTigerVersion}" ]; then
+    tigerDl=https://cli.tigerdata.com/releases/v${latestTigerVersion}/tiger-cli_${uname}_$(arch).tar.gz
+    echo "Downloading ${tigerDl} to ${localTiger}"
+    curl -L -o "${downloadDir}/tiger-cli.tar.gz" "${tigerDl}"
+    tar -xzf "${downloadDir}/tiger-cli.tar.gz" -C "${downloadDir}" "tiger"
+    rm -f "${downloadDir}/tiger-cli.tar.gz"
+    chmod +x "${localTiger}"
+    tigerCmd="$localTiger"
 fi
 
 # Logging functions
@@ -144,7 +135,7 @@ intro_message() {
     echo "  - a TimescaleDB instance to store the above data"
     echo ""
     echo "This is the workflow that we will use:"
-    echo "1. Choose between using free Tiger Cloud DB or local Docker DB"
+    echo "1. Choose between using Tiger Cloud DB or local Docker DB"
     echo "2. Create Slack App for Ingest & gather tokens"
     echo "3. Create Slack App for Agent & gather tokens"
     echo "4. Gather Anthropic API token"
@@ -186,7 +177,7 @@ check_resume_or_fresh_start() {
 
 # Check Tiger authentication status
 check_use_tiger() {
-    read -p "Do you want to use a free tier Tiger Cloud Database? [y/N]: " choice
+    read -p "Do you want to use a Tiger Cloud Database? [y/N]: " choice
     if [[ $choice =~ ^[Yy] ]]; then
         USE_TIGER_CLOUD="Y"
         log_success "Will use Tiger Cloud Database"
@@ -235,7 +226,7 @@ check_tiger_db_status() {
 create_tiger_db() {
     log_info "Creating Tiger database..."
 
-    createResponse=$(${tigerCmd} service create --cpu=shared --no-wait --name tiger-eon --with-password -o json 2>/dev/null)
+    createResponse=$(${tigerCmd} service create --no-wait --name tiger-eon --with-password -o json 2>/dev/null)
 
     TIGER_SERVICE_ID=$(${jqCmd} -r '.service_id // empty' <<< "$createResponse")
 
@@ -253,11 +244,11 @@ create_tiger_db() {
     fi
 
     # Parse DSN: postgresql://user:password@host:port/database?params
-    PGUSER=$(echo "$dsn" | sed -n 's|postgresql://\([^:]*\):.*|\1|p')
-    PGDATABASE=$(echo "$dsn" | sed -n 's|postgresql://[^/]*/\([^?]*\).*|\1|p')
-    PGPASSWORD=$(${jqCmd} -r '.initial_password // empty' <<< "$createResponse")
-    PGHOST=$(${jqCmd} -r '.endpoint.host // empty' <<< "$createResponse")
-    PGPORT=$(${jqCmd} -r '.endpoint.port // empty' <<< "$createResponse")
+    PGUSER=$(${jqCmd} -r '.role // empty' <<< "$createResponse")
+    PGDATABASE=$(${jqCmd} -r '.database // empty' <<< "$createResponse")
+    PGPASSWORD=$(${jqCmd} -r '.password // empty' <<< "$createResponse")
+    PGHOST=$(${jqCmd} -r '.host // empty' <<< "$createResponse")
+    PGPORT=$(${jqCmd} -r '.port // empty' <<< "$createResponse")
 
     if [[ -z "$PGHOST" || -z "$PGPORT" || -z "$PGDATABASE" || -z "$PGUSER" || -z "$PGPASSWORD" ]]; then
         log_error "Failed to parse database connection string"
