@@ -68,15 +68,35 @@ if [ ! -f "$jqCmd" ]; then
     chmod +x "$jqCmd"
 fi
 
-tigerCmd=$(which tiger 2>/dev/null || echo "$downloadDir/tiger")
-if [ ! -f "$tigerCmd" ]; then
-    tigerVersion=$(curl -s https://tiger-cli-releases.s3.us-east-1.amazonaws.com/install/latest.txt)
-    tigerDl=https://tiger-cli-releases.s3.us-east-1.amazonaws.com/releases/${tigerVersion}/tiger-cli_${uname}_$(arch).tar.gz
-    echo "Downloading ${tigerDl} to ${tigerCmd}"
-    curl -L -o "$downloadDir/tiger-cli.tar.gz" "${tigerDl}"
-    tar -xzf "$downloadDir/tiger-cli.tar.gz" -C "${downloadDir}" "tiger"
-    rm -f "$downloadDir/tiger-cli.tar.gz"
-    chmod +x "$tigerCmd"
+localTiger=$(echo "$downloadDir/tiger")
+tigerCmd=$(echo "$localTiger")
+latestTigerVersion=$(curl -s https://cli.tigerdata.com/latest.txt)
+latestTigerVersion=${latestTigerVersion#v}
+
+# TODO: rework this block once https://github.com/timescale/tiger-cli/pull/54 is merged
+
+# If the user has a version of tiger cli in ./download or they don't have the CLI at all,
+# then download the latest version to ./download/tiger
+if [ ! -f "$tigerCmd" ] || [ "$tigerCmd" = "$localTiger" ]; then
+    if [ -f "$tigerCmd" ]; then
+        tigerVersion=$("$tigerCmd" version | awk '/^Tiger CLI/ {print $3}')
+    else
+        tigerVersion="N/A"
+    fi
+    echo "Latest tiger version: $latestTigerVersion, installed: $tigerVersion"
+    if [ "$tigerVersion" != "$latestTigerVersion" ]; then
+        tigerDl=https://cli.tigerdata.com/releases/v${latestTigerVersion}/tiger-cli_${uname}_$(arch).tar.gz
+        echo "Downloading ${tigerDl} to ${tigerCmd}"
+        curl -L -o "$downloadDir/tiger-cli.tar.gz" "${tigerDl}"
+        tar -xzf "$downloadDir/tiger-cli.tar.gz" -C "${downloadDir}" "tiger"
+        rm -f "$downloadDir/tiger-cli.tar.gz"
+        chmod +x "$tigerCmd"
+    fi
+else
+    # Print out the version if using system tiger, just for info
+    # TODO: use `tiger version --check` once available
+    tigerVersion=$("$tigerCmd" version | awk '/^Tiger CLI/ {print $3}')
+    echo "Latest tiger version: $latestTigerVersion, installed: $tigerVersion"
 fi
 
 # Logging functions
@@ -215,7 +235,7 @@ check_tiger_db_status() {
 create_tiger_db() {
     log_info "Creating Tiger database..."
 
-    createResponse=$(${tigerCmd} service create --free --no-wait --name tiger-eon --with-password -o json 2>/dev/null)
+    createResponse=$(${tigerCmd} service create --cpu=shared --no-wait --name tiger-eon --with-password -o json 2>/dev/null)
 
     TIGER_SERVICE_ID=$(${jqCmd} -r '.service_id // empty' <<< "$createResponse")
 
