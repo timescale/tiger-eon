@@ -207,10 +207,10 @@ check_resume_or_fresh_start() {
 
 # Check Tiger authentication status
 check_use_tiger() {
-    read -p "Do you want to use a Tiger Cloud Database? [y/N]: " choice
+    read -p "Do you want to use a hosted Tiger Cloud Database? [y/N]: " choice
     if [[ $choice =~ ^[Yy] ]]; then
         USE_TIGER_CLOUD="Y"
-        log_success "Will use Tiger Cloud Database"
+        log_success "Will use Tiger Cloud Database. Note: will use free tier instances if you are a non-paying user"
     else
         USE_TIGER_CLOUD="N"
         log_info "Will use local docker-compose database"
@@ -253,12 +253,143 @@ check_tiger_db_status() {
     done
 }
 
+parse_service_connection_info() {
+    local service_json="$1"
+    local include_password="${2:-false}"
+
+    # Parse connection info using jq
+    PGHOST=$(echo "$service_json" | ${jqCmd} -r '.host // .endpoint.host // empty')
+    PGPORT=$(echo "$service_json" | ${jqCmd} -r '.port // .endpoint.port // empty')
+    PGDATABASE=$(echo "$service_json" | ${jqCmd} -r '.database // empty')
+    PGUSER=$(echo "$service_json" | ${jqCmd} -r '.role // empty')
+
+    # Handle password based on context
+    if [[ "$include_password" == "true" ]]; then
+        PGPASSWORD=$(echo "$service_json" | ${jqCmd} -r '.initial_password // empty')
+    else
+        PGPASSWORD=""
+    fi
+
+    # Validate required fields
+    if [[ -z "$PGHOST" || -z "$PGPORT" || -z "$PGDATABASE" || -z "$PGUSER" ]]; then
+        log_error "Failed to parse database connection information"
+        return 1
+    fi
+
+    return 0
+}
+
+select_or_create_service() {
+    echo ""
+    echo "=== Tiger Database Selection ==="
+    echo ""
+
+    log_info "Querying existing Tiger services..."
+
+    local services_response
+    services_response=$(${tigerCmd} service list -o json 2>&1)
+
+    # Check if the response is valid JSON
+    if ! echo "$services_response" | ${jqCmd} . >/dev/null 2>&1; then
+        log_error "Failed to query services or invalid response: $services_response"
+        return 1
+    fi
+
+    # Filter services named "tiger-eon"
+    local tiger_services
+    tiger_services=$(echo "$services_response" | ${jqCmd} -r '.[] | select(.name == "tiger-eon")')
+
+    local service_ids=()
+    local count=1
+
+    if [[ -n "$tiger_services" ]]; then
+        echo "Available tiger-eon services:"
+        echo ""
+
+        # Display existing services
+        while IFS= read -r service; do
+            local service_id=$(echo "$service" | ${jqCmd} -r '.service_id')
+            local created_at=$(echo "$service" | ${jqCmd} -r '.created // empty')
+            local status=$(echo "$service" | ${jqCmd} -r '.status')
+            local host=$(echo "$service" | ${jqCmd} -r '.host // .endpoint.host // "N/A"')
+            local project_id=$(echo "$service" | ${jqCmd} -r '.project_id // "N/A"')
+            local console_url=$(echo "$service" | ${jqCmd} -r '.console_url // "N/A"')
+
+            service_ids+=("$service_id")
+            echo "$count. Service ID: $service_id"
+            echo "   Created: $created_at"
+            echo "   Status: $status"
+            echo "   Host: $host"
+            echo "   Project ID: $project_id"
+            echo "   Console URL: $console_url"
+            echo ""
+            ((count++))
+        done <<< "$(echo "$tiger_services" | ${jqCmd} -c '.')"
+
+        # Add "create new service" option
+        echo "$count. Create a new service"
+        echo ""
+
+        local selection
+        while true; do
+            read -p "Select option [1-$count]: " selection
+            if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le $count ]; then
+                if [ "$selection" -eq $count ]; then
+                    # User chose to create new service
+                    create_tiger_db
+                    return $?
+                else
+                    # User chose existing service
+                    TIGER_SERVICE_ID="${service_ids[$((selection-1))]}"
+                    log_success "Selected service: $TIGER_SERVICE_ID"
+
+                    # Get the service from the list and parse connection info
+                    local selected_service
+                    selected_service=$(echo "$tiger_services" | ${jqCmd} -c '.' | sed -n "${selection}p")
+
+                    if ! parse_service_connection_info "$selected_service" "false"; then
+                        return 1
+                    fi
+
+                    log_warning "Password not available for existing service. You may need to reset it if connection fails."
+                    log_success "Database connection information obtained successfully"
+                    return 0
+                fi
+            else
+                log_error "Invalid selection. Please choose a number between 1 and $count."
+            fi
+        done
+    else
+        log_info "No existing tiger-eon services found. Creating a new service..."
+        create_tiger_db
+        return $?
+    fi
+}
+
 create_tiger_db() {
-    log_info "Creating Tiger database..."
+    log_info "Creating new Tiger database..."
 
-    createResponse=$(${tigerCmd} service create --no-wait --name tiger-eon --with-password -o json 2>/dev/null)
+    local createResponse
+    createResponse=$(${tigerCmd} service create --cpu=shared --no-wait --name tiger-eon --with-password -o json 2>&1)
 
-    TIGER_SERVICE_ID=$(${jqCmd} -r '.service_id // empty' <<< "$createResponse")
+    # Check if the response is valid JSON (indicates success)
+    if ! echo "$createResponse" | ${jqCmd} . >/dev/null 2>&1; then
+        log_error "Failed to create Tiger service. Error: $createResponse"
+
+        # Check for specific error messages
+        if echo "$createResponse" | grep -q "free service limit"; then
+            log_error "You have reached your free service limit. Please delete an existing service or upgrade to a paid plan."
+            echo ""
+            echo "To delete an existing service, run:"
+            echo "  ${tigerCmd} service delete <service-id>"
+            echo ""
+            echo "To list your services, run:"
+            echo "  ${tigerCmd} service list"
+        fi
+        return 1
+    fi
+
+    TIGER_SERVICE_ID=$(echo "$createResponse" | ${jqCmd} -r '.service_id // empty')
 
     if [[ -z "$TIGER_SERVICE_ID" ]]; then
         log_error "Failed to parse service ID from response"
@@ -267,21 +398,8 @@ create_tiger_db() {
 
     log_success "Tiger database created with service ID: $TIGER_SERVICE_ID"
 
-    dsn=$(${jqCmd} -r '.connection_string // empty' <<< "$createResponse")
-    if [[ -z "$dsn" ]]; then
-        log_error "Failed to get connection string from response"
-        return 1
-    fi
-
-    # Parse DSN: postgresql://user:password@host:port/database?params
-    PGUSER=$(${jqCmd} -r '.role // empty' <<< "$createResponse")
-    PGDATABASE=$(${jqCmd} -r '.database // empty' <<< "$createResponse")
-    PGPASSWORD=$(${jqCmd} -r '.password // empty' <<< "$createResponse")
-    PGHOST=$(${jqCmd} -r '.host // empty' <<< "$createResponse")
-    PGPORT=$(${jqCmd} -r '.port // empty' <<< "$createResponse")
-
-    if [[ -z "$PGHOST" || -z "$PGPORT" || -z "$PGDATABASE" || -z "$PGUSER" || -z "$PGPASSWORD" ]]; then
-        log_error "Failed to parse database connection string"
+    # Use the common parsing function with password included
+    if ! parse_service_connection_info "$createResponse" "true"; then
         return 1
     fi
 
@@ -298,7 +416,7 @@ setup_tiger_db() {
     fi
 
     check_tiger_auth
-    create_tiger_db
+    select_or_create_service
 
     return 0
 }
