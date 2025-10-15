@@ -19,7 +19,7 @@ services:
 
   tiger-agent:
     image: ghcr.io/timescale/tiger-agent:latest
-    environment: &env_vars
+    environment:
       PGHOST: ${PGHOST}
       PGPORT: ${PGPORT}
       PGDATABASE: ${PGDATABASE}
@@ -28,6 +28,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       SLACK_APP_TOKEN: ${SLACK_AGENT_APP_TOKEN}
       SLACK_BOT_TOKEN: ${SLACK_AGENT_BOT_TOKEN}
+      SERVICE_NAME: ${SERVICE_NAME:-tiger-eon}
       LOGFIRE_TOKEN: ${LOGFIRE_TOKEN}
       LOGFIRE_ENVIRONMENT: ${LOGFIRE_ENVIRONMENT}
       LOGFIRE_TRACES_ENDPOINT: ${LOGFIRE_TRACES_ENDPOINT}
@@ -47,18 +48,20 @@ services:
 
   tiger-slack-ingest:
     image: ghcr.io/timescale/tiger-slack-ingest:latest
-    environment:
-      <<: *env_vars
+    environment: &slack_env_vars
+      PGHOST: ${PGHOST}
+      PGPORT: ${PGPORT}
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
       SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
       SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
 
   tiger-slack-mcp-server:
     image: ghcr.io/timescale/tiger-slack-mcp:latest
     environment:
-      <<: *env_vars
+      <<: *slack_env_vars
       PORT: 80
-      SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
-      SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
     ports:
       - "3001:80"
 
