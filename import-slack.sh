@@ -62,6 +62,7 @@ docker run --rm \
     -e PGDATABASE="${PGDATABASE}" \
     -e PGUSER="${PGUSER}" \
     -e PGPASSWORD="${PGPASSWORD}" \
+    -e LOGFIRE_IGNORE_NO_CONFIG=1 \
     --network host \
     "$IMAGE" \
     uv run python -m tiger_slack.import /slack-data
