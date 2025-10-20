@@ -1,11 +1,6 @@
 import { input, select } from '@inquirer/prompts';
 import { UninitializedConfigError } from '../errors';
-import {
-  EnvironmentVariable,
-  McpConfigGroup,
-  SlackAppConfig,
-  SlackTokens,
-} from '../types';
+import { EnvironmentVariable, SlackAppConfig, SlackTokens } from '../types';
 import { copyToClipboard, downloadJson, openBrowser } from '../utils';
 import { ConfigWithMcpServer } from './config';
 import { validateTokenHasCorrectPrefix } from '../utils/string';

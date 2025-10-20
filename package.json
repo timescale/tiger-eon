@@ -4,7 +4,7 @@
   "description": "Interactive setup script for Tiger Agent",
   "type": "module",
   "scripts": {
-    "setup": "tsx scripts/setup.ts",
+    "setup": "TIGER_CMD=$(./tiger_cli_setup.sh) tsx scripts/setup.ts",
     "target": "tsx scripts/run.ts",
     "format": "prettier --write scripts/**/*.ts",
     "format:check": "prettier --check scripts/**/*.ts",
