@@ -1,7 +1,7 @@
-import { UninitializedConfigError } from '../common/errors';
-import { TigerCLI } from '../common/tiger';
-import { DatabaseConfigParameters, EnvironmentVariable } from '../common/types';
-import { log, parseConnectionString } from '../common/utils';
+import { UninitializedConfigError } from '../errors';
+import { TigerCLI } from '../tiger';
+import { DatabaseConfigParameters, EnvironmentVariable } from '../types';
+import { log, parseConnectionString } from '../utils';
 import { Config } from './config';
 import { confirm, select, password } from '@inquirer/prompts';
 
@@ -108,7 +108,12 @@ export class DatabaseConfig extends Config {
   private tiger: TigerCLI;
 
   constructor() {
-    super({ name: 'Database', required: true });
+    super({
+      name: 'Database',
+      description:
+        'Configure a TimescaleDB instance, where Slack messages + agent events are stored.',
+      required: true,
+    });
     this.tiger = new TigerCLI(process.env.TIGER_CMD || './download/tiger');
   }
 

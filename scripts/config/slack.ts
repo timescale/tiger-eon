@@ -1,17 +1,13 @@
 import { input, select } from '@inquirer/prompts';
-import { UninitializedConfigError } from '../common/errors';
-import {
-  EnvironmentVariable,
-  SlackAppConfig,
-  SlackTokens,
-} from '../common/types';
+import { UninitializedConfigError } from '../errors';
+import { EnvironmentVariable, SlackAppConfig, SlackTokens } from '../types';
 import {
   copyToClipboard,
   downloadJson,
   log,
   openBrowser,
   validateTokenHasCorrectPrefix,
-} from '../common/utils';
+} from '../utils';
 import { Config } from './config';
 
 abstract class SlackConfig extends Config {

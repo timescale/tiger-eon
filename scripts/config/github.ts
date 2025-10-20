@@ -1,11 +1,7 @@
 import { confirm, input } from '@inquirer/prompts';
-import { UninitializedConfigError } from '../common/errors';
-import { EnvironmentVariable } from '../common/types';
-import {
-  log,
-  openBrowser,
-  validateTokenHasCorrectPrefix,
-} from '../common/utils';
+import { UninitializedConfigError } from '../errors';
+import { EnvironmentVariable } from '../types';
+import { log, openBrowser, validateTokenHasCorrectPrefix } from '../utils';
 import { Config } from './config';
 
 export class GithubConfig extends Config {
@@ -16,7 +12,11 @@ export class GithubConfig extends Config {
   private token: string | undefined;
 
   constructor() {
-    super({ name: 'GitHub' });
+    super({
+      name: 'GitHub',
+      description:
+        'This will configure the Tiger GitHub MCP server (https://github.com/timescale/tiger-gh-mcp-server)',
+    });
   }
 
   async collect(): Promise<void> {

@@ -1,13 +1,17 @@
-import { UninitializedConfigError } from '../common/errors';
-import { EnvironmentVariable } from '../common/types';
-import { log, openBrowser } from '../common/utils';
+import { UninitializedConfigError } from '../errors';
+import { EnvironmentVariable } from '../types';
+import { log, openBrowser } from '../utils';
 import { confirm, input } from '@inquirer/prompts';
 import { Config } from './config';
 
 export class LinearConfig extends Config {
   private apiKey: string | undefined;
   constructor() {
-    super({ name: 'Linear' });
+    super({
+      name: 'Linear',
+      description:
+        'This will configure the Tiger Linear MCP server (https://github.com/timescale/tiger-linear-mcp-server)',
+    });
   }
 
   async collect(): Promise<void> {

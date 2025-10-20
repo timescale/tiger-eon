@@ -1,17 +1,18 @@
 import { confirm, input } from '@inquirer/prompts';
-import { UninitializedConfigError } from '../common/errors';
-import { EnvironmentVariable } from '../common/types';
-import {
-  log,
-  openBrowser,
-  validateTokenHasCorrectPrefix,
-} from '../common/utils';
+import { UninitializedConfigError } from '../errors';
+import { EnvironmentVariable } from '../types';
+import { log, openBrowser, validateTokenHasCorrectPrefix } from '../utils';
 import { Config } from './config';
 
 export class AnthropicConfig extends Config {
   private apiKey: string | undefined;
   constructor() {
-    super({ name: 'Anthropic', required: true });
+    super({
+      description:
+        'Configure the Anthropic API key, this is needed for the agent.',
+      name: 'Anthropic',
+      required: true,
+    });
   }
 
   async collect(): Promise<void> {

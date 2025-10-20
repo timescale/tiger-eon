@@ -2,85 +2,41 @@
 
 import { confirm, select } from '@inquirer/prompts';
 import { readFile, writeFile, rename } from 'fs/promises';
-import { EnvironmentVariable } from './common/types';
-import { introMessage, log, startServices } from './common/utils';
+import { EnvironmentVariable } from './types';
 import { configs } from './config';
-import {
-  getEnvironmentVariables,
-  upsertEnvironmentVariables,
-} from './utils/env';
 
-async function checkExistingConfig(): Promise<EnvironmentVariable[]> {
-  try {
-    const currentEnvironmentVariables = await getEnvironmentVariables();
+const introMessage = () => {
+  console.clear();
 
-    if (!currentEnvironmentVariables.length) {
-      log.info('No .env file, starting with a fresh setup');
-      return currentEnvironmentVariables;
-    }
-
-    const action = await select({
-      message: 'Found existing .env file. What would you like to do?',
-      choices: [
-        {
-          name: 'Modify the existing configuration',
-          value: 'modify',
-          description:
-            'Update your current settings while preserving existing values',
-        },
-        {
-          name: 'Start fresh with new configuration',
-          value: 'fresh',
-          description: 'Backup current .env and create a new configuration',
-        },
-        {
-          name: 'Keep existing configuration and exit',
-          value: 'keep',
-          description: 'Leave your current setup unchanged',
-        },
-      ],
-      default: 'modify',
-    });
-
-    if (action === 'fresh') {
-      const backup = `.env.backup.${Date.now()}`;
-      await rename('.env', backup);
-      log.success(`Backed up existing .env file to ${backup}`);
-      return [];
-    } else if (action === 'keep') {
-      log.info('Keeping existing configuration. Exiting.');
-      process.exit(0);
-    }
-
-    // for each config, we will see if values already exist and if they do, the user can skip the section
-    return currentEnvironmentVariables;
-  } catch (error) {
-    // .env doesn't exist, continue
-    return [];
-  }
-}
-
-async function updateMcpConfig(selectedServices: string[]): Promise<void> {
-  try {
-    const mcpConfig = JSON.parse(await readFile('mcp_config.json', 'utf-8'));
-
-    // Enable/disable services
-    for (const [service, config] of Object.entries(mcpConfig)) {
-      if (typeof config === 'object' && config !== null) {
-        (config as any).disabled = !selectedServices.includes(service);
-        log.success(
-          `${(config as any).disabled ? 'Disabled' : 'Enabled'} ${service} MCP server`,
-        );
-      }
-    }
-
-    await writeFile('mcp_config.json', JSON.stringify(mcpConfig, null, 2));
-  } catch (error) {
-    log.warning(
-      'Could not update mcp_config.json - you may need to configure it manually',
-    );
-  }
-}
+  console.log('==================================================');
+  console.log('     🐅 Tiger Agent Interactive Setup');
+  console.log('==================================================');
+  console.log('');
+  console.log("Hi! I'm eon, a TigerData agent!");
+  console.log(
+    "I'm going to guide you through the setup with the services you need.",
+  );
+  console.log('');
+  console.log('The core install includes the following:');
+  console.log(
+    '  - a Slack App for the ingest service that will receive all messages/reactions from public channels',
+  );
+  console.log(
+    '  - a Slack App for the agent that will receive @mentions to it',
+  );
+  console.log('  - a TimescaleDB instance to store the above data');
+  console.log('');
+  console.log('This is the workflow that we will use:');
+  console.log('1. Choose between using free Tiger Cloud DB or local Docker DB');
+  console.log('2. Create Slack App for Ingest & gather tokens');
+  console.log('3. Create Slack App for Agent & gather tokens');
+  console.log('4. Gather Anthropic API token');
+  console.log('5. Determine which optional MCP servers to configure');
+  console.log('6. Gather required variables for optional MCP servers');
+  console.log('7. Write the .env file');
+  console.log('8. Optionally, spin up the selected services');
+  console.log('');
+};
 
 export default async function setup() {
   try {

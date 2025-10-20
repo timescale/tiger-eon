@@ -1,10 +1,18 @@
 import { input } from '@inquirer/prompts';
-import { EnvironmentVariable } from '../common/types';
+import { EnvironmentVariable } from '../types';
 import { Config } from './config';
 
 export class LogfireConfig extends Config {
   private token: string | undefined;
   private environment: string | undefined;
+
+  constructor() {
+    super({
+      name: 'Logfire',
+      description: 'Logfire provides observability and monitoring.',
+    });
+  }
+
   async collect(): Promise<void> {
     console.log('Logfire Configuration (Optional)');
     console.log(
