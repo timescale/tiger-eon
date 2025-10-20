@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "declaration": false,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "types": ["jest", "node"]
   },
   "include": ["scripts/**/*"],
   "exclude": ["node_modules", "dist"]

@@ -47,7 +47,7 @@ export interface EnvironmentVariable {
 export interface McpConfig {
   url: string;
   disabled?: boolean;
-  tool_prefix?: boolean;
+  tool_prefix?: string;
 }
 
 export type McpConfigGroup = Record<string, McpConfig>;

@@ -1,8 +1,10 @@
 import { confirm, input } from '@inquirer/prompts';
 import { UninitializedConfigError } from '../errors';
 import { EnvironmentVariable } from '../types';
-import { log, openBrowser, validateTokenHasCorrectPrefix } from '../utils';
+import { openBrowser } from '../utils';
 import { Config } from './config';
+import { validateTokenHasCorrectPrefix } from '../utils/string';
+import { log } from '../utils/log';
 
 export class AnthropicConfig extends Config {
   private apiKey: string | undefined;
@@ -31,6 +33,7 @@ export class AnthropicConfig extends Config {
       message: 'ANTHROPIC_API_KEY:',
       validate: (val) => validateTokenHasCorrectPrefix(val, 'sk-ant'),
     });
+    this.isConfigured = true;
   }
   async validate(): Promise<boolean> {
     if (!this.apiKey) {

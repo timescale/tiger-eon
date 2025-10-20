@@ -1,20 +1,25 @@
 import { input, select } from '@inquirer/prompts';
 import { UninitializedConfigError } from '../errors';
-import { EnvironmentVariable, SlackAppConfig, SlackTokens } from '../types';
 import {
-  copyToClipboard,
-  downloadJson,
-  log,
-  openBrowser,
-  validateTokenHasCorrectPrefix,
-} from '../utils';
-import { Config } from './config';
+  EnvironmentVariable,
+  McpConfigGroup,
+  SlackAppConfig,
+  SlackTokens,
+} from '../types';
+import { copyToClipboard, downloadJson, openBrowser } from '../utils';
+import { ConfigWithMcpServer } from './config';
+import { validateTokenHasCorrectPrefix } from '../utils/string';
 
-abstract class SlackConfig extends Config {
+abstract class SlackConfig extends ConfigWithMcpServer {
   private config: SlackAppConfig;
   private tokens: SlackTokens | undefined;
   constructor(name: string, config: SlackAppConfig) {
-    super({ name: `Slack ${name} App`, required: true });
+    super({
+      name: `Slack ${name} App`,
+      required: true,
+      mcpName: 'slack',
+      url: 'http://tiger-slack-mcp-server/mcp',
+    });
     this.config = config;
   }
   async collect(): Promise<void> {
@@ -103,6 +108,7 @@ abstract class SlackConfig extends Config {
     });
 
     this.tokens = { botToken, appToken };
+    this.isConfigured = true;
   }
   async validate(): Promise<boolean> {
     if (!this.tokens) {

@@ -26,6 +26,7 @@ export class LogfireConfig extends Config {
       message: 'Enter your environment (or press Enter to skip):',
       default: 'development',
     });
+    this.isConfigured = true;
   }
   validate(): Promise<boolean> {
     throw new Error('Method not implemented.');

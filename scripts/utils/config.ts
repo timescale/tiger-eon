@@ -1,65 +1,43 @@
 import { access, readFile, rename, writeFile } from 'fs/promises';
-import { constants } from 'fs';
-import { EnvironmentVariable } from '../types';
+import { constants, existsSync } from 'fs';
+import { EnvironmentVariable, McpConfig, McpConfigGroup } from '../types';
 
 import { select } from '@inquirer/prompts';
 import { log } from './log';
 
+const ENV_FILE = '.env';
+const MCP_CONFIG_FILE = 'mcp_config.json';
+
 export const upsertEnvironmentVariables = async (
   variables: EnvironmentVariable[],
 ): Promise<void> => {
-  const envPath = '.env';
-  let envContent = '';
+  const existingVariables = await getEnvironmentVariables();
 
-  // Check if .env file exists and read it
-  try {
-    await access(envPath, constants.F_OK);
-    envContent = await readFile(envPath, 'utf-8');
-  } catch {
-    // File doesn't exist, start with empty content
-    envContent = '';
-  }
-
-  // Split content into lines and process each variable
-  let lines = envContent.split('\n');
-
-  for (const variable of variables) {
-    if (!variable.value) {
-      continue; // Skip variables without values
-    }
-
-    const keyPattern = new RegExp(`^${variable.key}=`);
-    const newLine = `${variable.key}=${variable.value}`;
-
-    // Find if the key already exists
-    const existingLineIndex = lines.findIndex((line) => keyPattern.test(line));
-
+  for (const { key, value } of variables) {
+    const existingLineIndex = existingVariables.findIndex((x) => x.key === key);
     if (existingLineIndex !== -1) {
-      // Replace existing line
-      lines[existingLineIndex] = newLine;
+      // config with same key exists, update value
+      existingVariables[existingLineIndex].value = value;
     } else {
-      // Add new line (avoid adding empty lines at the end)
-      if (lines.length === 1 && lines[0] === '') {
-        lines[0] = newLine;
-      } else {
-        lines.push(newLine);
-      }
+      // otherwise, add a new entry
+      existingVariables.push({ key, value });
     }
   }
 
   // Write the updated content back to the file
-  const finalContent = lines.join('\n');
-  await writeFile(envPath, finalContent, 'utf-8');
+  const finalContent = existingVariables
+    .map((x) => `${x.key}=${x.value}`)
+    .join('\n');
+
+  await writeFile(ENV_FILE, finalContent, 'utf-8');
 };
 
 export const getEnvironmentVariables = async (): Promise<
   EnvironmentVariable[]
 > => {
-  const envPath = '.env';
-
   try {
-    await access(envPath, constants.F_OK);
-    const envContent = await readFile(envPath, 'utf-8');
+    await access(ENV_FILE, constants.F_OK);
+    const envContent = await readFile(ENV_FILE, 'utf-8');
 
     // Parse the content into EnvironmentVariable objects
     const variables: EnvironmentVariable[] = [];
@@ -82,10 +60,7 @@ export const getEnvironmentVariables = async (): Promise<
       const key = trimmedLine.substring(0, equalIndex).trim();
       const value = trimmedLine.substring(equalIndex + 1).trim();
 
-      // Only add if key is not empty
-      if (key) {
-        variables.push({ key, value });
-      }
+      variables.push({ key, value });
     }
 
     return variables;
@@ -145,24 +120,46 @@ export const checkExistingConfig = async (): Promise<EnvironmentVariable[]> => {
   }
 };
 
-async function upsertMcpConfig(selectedServices: string[]): Promise<void> {
-  try {
-    const mcpConfig = JSON.parse(await readFile('mcp_config.json', 'utf-8'));
+export const getMcpConfig = async (): Promise<McpConfigGroup> => {
+  const exists = existsSync(MCP_CONFIG_FILE);
 
-    // Enable/disable services
-    for (const [service, config] of Object.entries(mcpConfig)) {
-      if (typeof config === 'object' && config !== null) {
-        (config as any).disabled = !selectedServices.includes(service);
-        log.success(
-          `${(config as any).disabled ? 'Disabled' : 'Enabled'} ${service} MCP server`,
-        );
-      }
+  if (!exists) return {};
+
+  let mcpConfig: McpConfigGroup;
+  try {
+    mcpConfig = JSON.parse(
+      await readFile(MCP_CONFIG_FILE, 'utf-8'),
+    ) as McpConfigGroup;
+
+    return mcpConfig;
+  } catch (error) {
+    log.error('Failed to parse mcp config file, will create a new one', error);
+    return {};
+  }
+};
+
+export const upsertMcpConfig = async (
+  newMcpConfigs: McpConfigGroup,
+): Promise<void> => {
+  try {
+    const existingMcpConfig = JSON.parse(
+      await readFile('mcp_config.json', 'utf-8'),
+    ) as McpConfigGroup;
+
+    for (const [name, config] of Object.entries(newMcpConfigs)) {
+      existingMcpConfig[name] = config;
+      log.success(
+        `${config.disabled ? 'Disabled' : 'Enabled'} ${name} MCP server`,
+      );
     }
 
-    await writeFile('mcp_config.json', JSON.stringify(mcpConfig, null, 2));
+    await writeFile(
+      MCP_CONFIG_FILE,
+      JSON.stringify(existingMcpConfig, null, 2),
+    );
   } catch (error) {
     log.warning(
       'Could not update mcp_config.json - you may need to configure it manually',
     );
   }
-}
+};

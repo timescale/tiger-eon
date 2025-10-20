@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach (Remote Debug)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/tiger_agent"
+                }
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "Debug Setup Script",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/setup.ts",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": ["tsx"],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "cwd": "${workspaceFolder}",
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ]
+        }
+    ]
+}

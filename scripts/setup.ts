@@ -4,6 +4,14 @@ import { confirm, select } from '@inquirer/prompts';
 import { readFile, writeFile, rename } from 'fs/promises';
 import { EnvironmentVariable } from './types';
 import { configs } from './config';
+import { ConfigWithMcpServer } from './config/config';
+import { log } from './utils/log';
+import {
+  checkExistingConfig,
+  upsertEnvironmentVariables,
+  upsertMcpConfig,
+} from './utils/config';
+import { startServices } from './utils/services';
 
 const introMessage = () => {
   console.clear();
@@ -95,7 +103,12 @@ export default async function setup() {
       }
 
       const vars = config.getVariables();
-      upsertEnvironmentVariables(vars);
+      await upsertEnvironmentVariables(vars);
+
+      if (config instanceof ConfigWithMcpServer) {
+        const mcpConfig = config.getMcpConfigGroup();
+        await upsertMcpConfig(mcpConfig);
+      }
     }
 
     await startServices();

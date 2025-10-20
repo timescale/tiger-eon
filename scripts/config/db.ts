@@ -1,7 +1,8 @@
 import { UninitializedConfigError } from '../errors';
 import { TigerCLI } from '../tiger';
 import { DatabaseConfigParameters, EnvironmentVariable } from '../types';
-import { log, parseConnectionString } from '../utils';
+import { log } from '../utils/log';
+import { parseConnectionString } from '../utils/string';
 import { Config } from './config';
 import { confirm, select, password } from '@inquirer/prompts';
 

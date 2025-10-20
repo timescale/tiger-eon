@@ -1,3 +1,4 @@
 .env
 download
 node_modules
+coverage/

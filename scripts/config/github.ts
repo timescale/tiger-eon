@@ -1,10 +1,12 @@
 import { confirm, input } from '@inquirer/prompts';
 import { UninitializedConfigError } from '../errors';
-import { EnvironmentVariable } from '../types';
-import { log, openBrowser, validateTokenHasCorrectPrefix } from '../utils';
-import { Config } from './config';
+import { EnvironmentVariable, McpConfigGroup } from '../types';
+import { openBrowser } from '../utils';
+import { ConfigWithMcpServer } from './config';
+import { log } from '../utils/log';
+import { validateTokenHasCorrectPrefix } from '../utils/string';
 
-export class GithubConfig extends Config {
+export class GithubConfig extends ConfigWithMcpServer {
   private static privateScopes = ['repo', 'read:org'];
   private static publicScopes = ['repo:status', 'public_repo'];
 
@@ -13,6 +15,8 @@ export class GithubConfig extends Config {
 
   constructor() {
     super({
+      mcpName: 'github',
+      url: 'http://tiger-gh-mcp-server/mcp',
       name: 'GitHub',
       description:
         'This will configure the Tiger GitHub MCP server (https://github.com/timescale/tiger-gh-mcp-server)',
@@ -49,6 +53,7 @@ export class GithubConfig extends Config {
       message: 'GITHUB_TOKEN:',
       validate: (val) => validateTokenHasCorrectPrefix(val, 'ghp_'),
     });
+    this.isConfigured = true;
   }
   async validate(): Promise<boolean> {
     if (!this.token || !this.organization) {
@@ -57,12 +62,10 @@ export class GithubConfig extends Config {
 
     try {
       const res = await fetch('https://api.github.com/user', {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `token ${this.token}`,
         },
-        body: JSON.stringify({ query: `{ viewer { name email }}` }),
       });
 
       if (!res.ok) {
@@ -72,7 +75,9 @@ export class GithubConfig extends Config {
         });
         return false;
       }
-      const scopes = (res.headers.get('X-OAuth-Scopes') || '').split(',');
+      const scopes = (res.headers.get('X-OAuth-Scopes') || '')
+        .split(',')
+        .map((x) => x.trim());
 
       if (GithubConfig.privateScopes.every((x) => scopes.includes(x))) {
         log.success('Validated token has private repo scopes');

@@ -1,13 +1,16 @@
 import { UninitializedConfigError } from '../errors';
-import { EnvironmentVariable } from '../types';
-import { log, openBrowser } from '../utils';
+import { EnvironmentVariable, McpConfigGroup } from '../types';
+import { openBrowser } from '../utils';
 import { confirm, input } from '@inquirer/prompts';
-import { Config } from './config';
+import { ConfigWithMcpServer } from './config';
+import { log } from '../utils/log';
 
-export class LinearConfig extends Config {
+export class LinearConfig extends ConfigWithMcpServer {
   private apiKey: string | undefined;
   constructor() {
     super({
+      mcpName: 'linear',
+      url: 'http://tiger-linear-mcp-server/mcp',
       name: 'Linear',
       description:
         'This will configure the Tiger Linear MCP server (https://github.com/timescale/tiger-linear-mcp-server)',
@@ -27,6 +30,7 @@ export class LinearConfig extends Config {
     console.log('Create a Linear API key\n');
 
     this.apiKey = await input({ message: 'LINEAR_API_KEY:' });
+    this.isConfigured = true;
   }
   async validate(): Promise<boolean> {
     if (!this.apiKey) {
