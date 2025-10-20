@@ -59,7 +59,8 @@ export default async function setup() {
     const configurations = configs();
 
     for (let config of configurations) {
-      log.info(`\n${config.name} Configuration`);
+      console.log('');
+      log.heading(`${config.name} Configuration`);
 
       const isAlreadySetup = config.isAlreadyConfigured(existingConfiguration);
 

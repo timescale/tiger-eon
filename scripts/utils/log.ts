@@ -1,4 +1,5 @@
 const colors = {
+  CYAN: '\x1b[0;36m',
   RED: '\x1b[0;31m',
   GREEN: '\x1b[0;32m',
   YELLOW: '\x1b[1;33m',
@@ -7,6 +8,11 @@ const colors = {
 };
 
 export const log = {
+  heading: (msg: string, ...params: any[]) =>
+    console.log(
+      `${colors.CYAN}«${colors.NC} ${msg} ${colors.CYAN}»${colors.NC}`,
+      ...params,
+    ),
   info: (msg: string, ...params: any[]) =>
     console.log(`${colors.BLUE}ℹ${colors.NC} ${msg}`, ...params),
   success: (msg: string, ...params: any[]) =>
