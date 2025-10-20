@@ -1,23 +1,17 @@
 #!/bin/bash
 
-# Simple TypeScript setup runner
-# Similar to the bs script pattern but for our TypeScript setup
+downloadDir=$(pwd)/download
 
-# Check if we have node and npm/yarn
-if ! command -v node &> /dev/null; then
-    echo "Node.js is required but not installed"
-    exit 1
-fi
-
-# Install dependencies if node_modules doesn't exist
-if [ ! -d "node_modules" ]; then
-    echo "Installing dependencies..."
-    if command -v yarn &> /dev/null; then
-        yarn install
-    else
-        npm install
-    fi
+# get bun
+bunCmd=$(which bun 2>/dev/null || echo "$downloadDir/bun")
+if [ ! -f "$bunCmd" ]; then
+    echo Downloading bun to "$bunCmd"
+    curl -L -o "$bunCmd" https://bun.com/install
+    chmod +x "$bunCmd"
+    
+    # install
+    $bunCmd
 fi
 
 # Run the setup
-exec npx tsx scripts/run.ts setup
+exec bun setup
