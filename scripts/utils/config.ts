@@ -142,9 +142,7 @@ export const upsertMcpConfig = async (
   newMcpConfigs: McpConfigGroup,
 ): Promise<void> => {
   try {
-    const existingMcpConfig = JSON.parse(
-      await readFile('mcp_config.json', 'utf-8'),
-    ) as McpConfigGroup;
+    const existingMcpConfig = await getMcpConfig();
 
     for (const [name, config] of Object.entries(newMcpConfigs)) {
       existingMcpConfig[name] = config;
