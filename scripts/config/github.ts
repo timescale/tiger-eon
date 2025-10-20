@@ -24,6 +24,8 @@ export class GithubConfig extends ConfigWithMcpServer {
   }
 
   async collect(): Promise<void> {
+    this.organization = await input({ message: 'GITHUB_ORG:' });
+
     const hasPrivateAccess = await confirm({
       message: 'Do you want to include access to private repositories?',
       default: false,
@@ -48,7 +50,6 @@ export class GithubConfig extends ConfigWithMcpServer {
       `Create a GitHub personal access token with '${scopes}' scopes\n`,
     );
 
-    this.organization = await input({ message: 'GITHUB_ORG:' });
     this.token = await input({
       message: 'GITHUB_TOKEN:',
       validate: (val) => validateTokenHasCorrectPrefix(val, 'ghp_'),
