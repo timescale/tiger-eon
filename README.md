@@ -77,6 +77,7 @@ cd tiger-eon
 git clone git@github.com:timescale/tiger-eon.git
 cd tiger-eon
 cp .env.sample .env
+cp mcp_config.json.sample mcp_config.json
 ```
 
 ### Setup Anthropic Token

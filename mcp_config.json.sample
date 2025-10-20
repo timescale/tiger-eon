@@ -6,10 +6,10 @@
   "github": {
     "url": "http://tiger-gh-mcp-server/mcp",
     "tool_prefix": "github",
-    "disabled": false
+    "disabled": true
   },
   "linear": {
     "url": "http://tiger-linear-mcp-server/mcp",
-    "disabled": false
+    "disabled": true
   }
 }
