@@ -1,3 +1,4 @@
+import { password } from '@inquirer/prompts';
 import { TigerCLI } from '../tiger';
 import { DatabaseConfigParameters } from '../types';
 import { log } from './log';
@@ -10,7 +11,12 @@ export const selectExistingService = async (
   log.success(`Selected service: ${service.service_id}`);
 
   try {
-    // Try to get connection string with password
+    // using the tiger cli, we can only get a connection string with
+    // a password if the service was created on the same machine
+    // otherwise, there is no way to fetch the password.
+    // in that case, the getConnectionString(serviceId, true // with password) will fail
+    // so we will fallback to calling getConnectionString(serviceId, false) then prompt user
+    // for password
     log.info('Fetching connection string with password...');
     const connectionString = await tiger.getConnectionString(
       service.service_id,
