@@ -1,9 +1,10 @@
+#!/bin/bash
 # https://github.com/murrayju/build-strap-cli/blob/b2620ebcceffe0a905a0aa9b49b871aec6b4e6e8/bs#L17
 # Logging functions
-log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
-log_success() { echo -e "${GREEN}✓${NC} $1"; }
-log_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
-log_error() { echo -e "${RED}✗${NC} $1"; }
+log_info() { echo -e "${BLUE}ℹ${NC} $1" >&2; }
+log_success() { echo -e "${GREEN}✓${NC} $1" >&2; }
+log_warning() { echo -e "${YELLOW}⚠${NC} $1" >&2; }
+log_error() { echo -e "${RED}✗${NC} $1" >&2; }
 
 if [ "$(getconf LONG_BIT)" == "64" ]; then
     arch=64
@@ -45,7 +46,7 @@ latestTigerVersion=${latestTigerVersion#v}
 if [ -f "$systemTiger" ]; then
     # Print the outdated notice (if applicable)
     ${systemTiger} version --check 1>/dev/null
-    echo ""
+    echo "" >&2
 fi
 
 if [ -f "$tigerCmd" ]; then

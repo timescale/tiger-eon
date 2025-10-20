@@ -33,7 +33,7 @@ export class TigerCLI {
   }
 
   async checkAuth(): Promise<boolean> {
-    const result = await this.execCommand(['auth', 'whoami'], {
+    const result = await this.execCommand(['auth', 'status'], {
       captureOutput: true,
     });
     return result.exitCode === 0;
