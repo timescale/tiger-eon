@@ -26,7 +26,7 @@ export const upsertEnvironmentVariables = async (
 
   // Write the updated content back to the file
   const finalContent = existingVariables
-    .map((x) => `${x.key}=${x.value}`)
+    .map((x) => `${x.key}=${x.value ? x.value : ''}`)
     .join('\n');
 
   await writeFile(ENV_FILE, finalContent, 'utf-8');

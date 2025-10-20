@@ -134,6 +134,24 @@ API_KEY=test-key
         'utf-8',
       );
     });
+
+    it('should not save a value when value is undefined', async () => {
+      const existingEnv = `API_KEY=old-key\nLOG_LEVEL=debug`;
+      mockAccess.mockResolvedValue(undefined);
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      const variables = [
+        { key: 'API_KEY' }, // Update existing using no value
+      ];
+
+      await upsertEnvironmentVariables(variables);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'API_KEY=\nLOG_LEVEL=debug',
+        'utf-8',
+      );
+    });
   });
 
   describe('getMcpConfig', () => {
