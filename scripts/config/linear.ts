@@ -1,5 +1,4 @@
-import { UninitializedConfigError } from '../errors';
-import { EnvironmentVariable, McpConfigGroup } from '../types';
+import { EnvironmentVariable } from '../types';
 import { openBrowser } from '../utils';
 import { confirm, input } from '@inquirer/prompts';
 import { ConfigWithMcpServer } from './config';
@@ -32,17 +31,13 @@ export class LinearConfig extends ConfigWithMcpServer {
     this.apiKey = await input({ message: 'LINEAR_API_KEY:' });
     this.isConfigured = true;
   }
-  async validate(): Promise<boolean> {
-    if (!this.apiKey) {
-      throw new UninitializedConfigError();
-    }
-
+  protected async internalValidate(): Promise<boolean> {
     try {
       const res = await fetch('https://api.linear.app/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: this.apiKey,
+          Authorization: this.apiKey || '',
         },
         body: JSON.stringify({ query: `{ viewer { name email }}` }),
       });

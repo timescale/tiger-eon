@@ -18,8 +18,16 @@ export abstract class Config {
     this.isConfigured = false;
   }
 
+  protected abstract internalValidate(): Promise<boolean>;
   abstract collect(): Promise<void>;
-  abstract validate(): Promise<boolean>;
+
+  async validate(): Promise<boolean> {
+    if (this.required && !this.isConfigured) {
+      return false;
+    }
+
+    return this.internalValidate();
+  }
   abstract getVariables(): EnvironmentVariable[];
 
   isAlreadyConfigured(currentVariables: EnvironmentVariable[]): boolean {

@@ -1,5 +1,4 @@
 import { input, select } from '@inquirer/prompts';
-import { UninitializedConfigError } from '../errors';
 import { EnvironmentVariable, SlackAppConfig, SlackTokens } from '../types';
 import { copyToClipboard, downloadJson, openBrowser } from '../utils';
 import { ConfigWithMcpServer } from './config';
@@ -104,10 +103,7 @@ abstract class SlackConfig extends ConfigWithMcpServer {
     this.tokens = { botToken, appToken };
     this.isConfigured = true;
   }
-  async validate(): Promise<boolean> {
-    if (!this.tokens) {
-      throw new UninitializedConfigError();
-    }
+  protected async internalValidate(): Promise<boolean> {
     try {
       const response = await fetch('https://slack.com/api/auth.test', {
         headers: {

@@ -1,6 +1,5 @@
 import { confirm, input } from '@inquirer/prompts';
-import { UninitializedConfigError } from '../errors';
-import { EnvironmentVariable, McpConfigGroup } from '../types';
+import { EnvironmentVariable } from '../types';
 import { openBrowser } from '../utils';
 import { ConfigWithMcpServer } from './config';
 import { log } from '../utils/log';
@@ -56,11 +55,7 @@ export class GithubConfig extends ConfigWithMcpServer {
     });
     this.isConfigured = true;
   }
-  async validate(): Promise<boolean> {
-    if (!this.token || !this.organization) {
-      throw new UninitializedConfigError();
-    }
-
+  protected async internalValidate(): Promise<boolean> {
     try {
       const res = await fetch('https://api.github.com/user', {
         method: 'GET',
@@ -94,6 +89,7 @@ export class GithubConfig extends ConfigWithMcpServer {
 
     return true;
   }
+
   getVariables(): EnvironmentVariable[] {
     return [
       { key: 'GITHUB_ORG', value: this.organization },

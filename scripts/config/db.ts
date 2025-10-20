@@ -1,4 +1,3 @@
-import { UninitializedConfigError } from '../errors';
 import { TigerCLI } from '../tiger';
 import { DatabaseConfigParameters, EnvironmentVariable } from '../types';
 import { createNewTigerService, selectExistingService } from '../utils/db';
@@ -100,12 +99,9 @@ export class DatabaseConfig extends Config {
       this.config = await createNewTigerService(this.tiger);
     }
   }
-  async validate(): Promise<boolean> {
-    if (!this.config) {
-      throw new UninitializedConfigError();
-    }
-    if (this.config.serviceId) {
-      await this.tiger.waitForServiceReady(this.config.serviceId);
+  protected async internalValidate(): Promise<boolean> {
+    if (this.config!.serviceId) {
+      await this.tiger.waitForServiceReady(this.config!.serviceId);
     }
     return true;
   }

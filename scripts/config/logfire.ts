@@ -28,8 +28,8 @@ export class LogfireConfig extends Config {
     });
     this.isConfigured = true;
   }
-  validate(): Promise<boolean> {
-    throw new Error('Method not implemented.');
+  protected internalValidate(): Promise<boolean> {
+    return Promise.resolve(true);
   }
   getVariables(): EnvironmentVariable[] {
     return [

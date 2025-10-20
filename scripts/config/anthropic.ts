@@ -1,5 +1,4 @@
 import { confirm, input } from '@inquirer/prompts';
-import { UninitializedConfigError } from '../errors';
 import { EnvironmentVariable } from '../types';
 import { openBrowser } from '../utils';
 import { Config } from './config';
@@ -35,15 +34,11 @@ export class AnthropicConfig extends Config {
     });
     this.isConfigured = true;
   }
-  async validate(): Promise<boolean> {
-    if (!this.apiKey) {
-      throw new UninitializedConfigError();
-    }
-
+  protected async internalValidate(): Promise<boolean> {
     try {
       const response = await fetch('https://api.anthropic.com/v1/models', {
         headers: {
-          'x-api-key': this.apiKey,
+          'x-api-key': this.apiKey || '',
           'anthropic-version': '2023-06-01',
           'Content-Type': 'application/json',
         },
