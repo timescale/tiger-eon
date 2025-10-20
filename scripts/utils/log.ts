@@ -7,12 +7,12 @@ const colors = {
 };
 
 export const log = {
-  info: (msg: string, params?: any) =>
-    console.log(`${colors.BLUE}ℹ${colors.NC} ${msg}`, params),
-  success: (msg: string, params?: any) =>
-    console.log(`${colors.GREEN}✓${colors.NC} ${msg}`, params),
-  warning: (msg: string, params?: any) =>
-    console.log(`${colors.YELLOW}⚠${colors.NC} ${msg}`, params),
-  error: (msg: string, params?: any) =>
-    console.log(`${colors.RED}✗${colors.NC} ${msg}`, params),
+  info: (msg: string, ...params: any[]) =>
+    console.log(`${colors.BLUE}ℹ${colors.NC} ${msg}`, ...params),
+  success: (msg: string, ...params: any[]) =>
+    console.log(`${colors.GREEN}✓${colors.NC} ${msg}`, ...params),
+  warning: (msg: string, ...params: any[]) =>
+    console.log(`${colors.YELLOW}⚠${colors.NC} ${msg}`, ...params),
+  error: (msg: string, ...params: any[]) =>
+    console.log(`${colors.RED}✗${colors.NC} ${msg}`, ...params),
 };
