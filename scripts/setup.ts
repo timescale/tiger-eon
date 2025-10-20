@@ -1,8 +1,4 @@
-#!/usr/bin/env tsx
-
-import { confirm, select } from '@inquirer/prompts';
-import { readFile, writeFile, rename } from 'fs/promises';
-import { EnvironmentVariable } from './types';
+import { confirm } from '@inquirer/prompts';
 import { configs } from './config';
 import { ConfigWithMcpServer } from './config/config';
 import { log } from './utils/log';

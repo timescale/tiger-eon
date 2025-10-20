@@ -47,7 +47,6 @@ async function selectExistingService(
         );
         const config = parseConnectionString(connectionString);
 
-        console.log();
         const userPassword = await password({
           message: 'Enter database password (or press Enter to skip):',
         });
@@ -166,6 +165,7 @@ export class DatabaseConfig extends Config {
           name: `Service ID: ${service.service_id}
         Created: ${service.created}
         Status: ${service.status}
+        Name: ${service.name}
         Host: ${service.host || service.endpoint?.host || 'N/A'}
         Console URL: ${service.console_url || 'N/A'}`,
           value: { type: 'existing' as const, service, index },
