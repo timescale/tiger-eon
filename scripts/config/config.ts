@@ -1,4 +1,5 @@
 import { EnvironmentVariable, McpConfig, McpConfigGroup } from '../types';
+import { log } from '../utils/log';
 
 export interface ConfigParams {
   description?: string;
@@ -22,7 +23,12 @@ export abstract class Config {
   abstract collect(): Promise<void>;
 
   async validate(): Promise<boolean> {
-    if (this.required && !this.isConfigured) {
+    if (!this.isConfigured) {
+      if (!this.required) {
+        log.info(`${this.name} is not configured, skipping validation`);
+        return true;
+      }
+      log.error(`${this.name} is not configured and is required`);
       return false;
     }
 
