@@ -10,4 +10,5 @@ if [ ! -f "$bunCmd" ]; then
 fi
 
 # Run the setup
+"$bunCmd" install
 exec "$bunCmd" setup
