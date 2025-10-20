@@ -32,9 +32,20 @@ export abstract class Config {
       return false;
     }
 
-    return this.internalValidate();
+    const isValid = await this.internalValidate();
+    if (!isValid) {
+      log.error(`${this.name} configuration failed validation`);
+      return false;
+    }
+    log.success(`${this.name} configuration validated`);
+
+    return true;
   }
+
   abstract getVariables(): EnvironmentVariable[];
+  getEmptyVariables(): EnvironmentVariable[] {
+    return this.getVariables().map(({ key }) => ({ key: key }));
+  }
 
   isAlreadyConfigured(currentVariables: EnvironmentVariable[]): boolean {
     const expectedVariables = this.getVariables();

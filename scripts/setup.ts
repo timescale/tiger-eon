@@ -65,29 +65,31 @@ export default async function setup() {
       const isAlreadySetup = config.isAlreadyConfigured(existingConfiguration);
 
       if (isAlreadySetup) {
-        const shouldSkip = await confirm({
+        const keepExistingConfig = await confirm({
           message:
             'This is already configured, do you want to keep existing config?',
           default: true,
         });
 
-        if (shouldSkip) {
+        if (keepExistingConfig) {
           continue;
         }
       }
 
-      if (!config.required) {
-        const shouldSetup = await confirm({
-          message: 'This service is optional, do you wish to set this up?',
-          default: true,
-        });
-
-        if (!shouldSetup) {
-          continue;
-        }
-      }
-
+      let disableConfig = false;
       while (true) {
+        if (!config.required) {
+          const shouldSetupOptional = await confirm({
+            message: 'This service is optional, do you wish to set this up?',
+            default: false,
+          });
+
+          if (!shouldSetupOptional) {
+            disableConfig = true;
+            break;
+          }
+        }
+
         await config.collect();
 
         const isValid = await config.validate();
@@ -95,11 +97,14 @@ export default async function setup() {
         if (isValid) {
           break;
         }
-
-        // TODO
       }
 
-      const vars = config.getVariables();
+      // in the case that the user skips an optional config,
+      // we should store empty values of that config
+      const vars = disableConfig
+        ? config.getEmptyVariables()
+        : config.getVariables();
+
       await upsertEnvironmentVariables(vars);
 
       if (config instanceof ConfigWithMcpServer) {
