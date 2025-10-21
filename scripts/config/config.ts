@@ -43,10 +43,6 @@ export abstract class Config {
 
   abstract getVariablesInternal(): EnvironmentVariable[];
 
-  getEmptyVariables(): EnvironmentVariable[] {
-    return this.getVariablesInternal().map(({ key }) => ({ key: key }));
-  }
-
   isAlreadyConfigured(currentVariables: EnvironmentVariable[]): boolean {
     const expectedVariables = this.getVariablesInternal();
 
