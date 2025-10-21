@@ -53,6 +53,10 @@ export class TigerCLI {
       throw new Error(`Failed to list services: ${result.stderr}`);
     }
 
+    if (!result.stdout.trim()) {
+      return [];
+    }
+
     try {
       return JSON.parse(result.stdout);
     } catch (error) {
