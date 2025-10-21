@@ -120,9 +120,40 @@ export class TigerCLI {
     }
   }
 
+  async getServiceDetails(
+    serviceId: string,
+    withPassword: boolean,
+  ): Promise<TigerService> {
+    const result = await this.execCommand(
+      [
+        'service',
+        'get',
+        '-o',
+        'json',
+        ...(withPassword ? ['--with-password'] : []),
+        serviceId,
+      ],
+      { captureOutput: true },
+    );
+
+    if (result.exitCode !== 0) {
+      throw new Error(`Failed to get service details: ${result.stderr}`);
+    }
+
+    try {
+      const parsed = JSON.parse(result.stdout);
+      if (!parsed || parsed.service_id !== serviceId) {
+        throw new Error('Service ID mismatch in response');
+      }
+      return parsed;
+    } catch (error) {
+      throw new Error(`Failed to parse service details: ${result.stdout}`);
+    }
+  }
+
   async getServiceStatus(serviceId: string): Promise<string> {
     const result = await this.execCommand(
-      ['service', 'describe', '-o', 'json', serviceId],
+      ['service', 'get', '-o', 'json', serviceId],
       { captureOutput: true },
     );
 

@@ -3,14 +3,21 @@ export interface TigerService {
   name: string;
   created: string;
   status: string;
-  host?: string;
+  host: string;
+  port: number;
   endpoint?: {
     host: string;
     port: number;
   };
   console_url?: string;
-  database?: string;
-  role?: string;
+  database: string;
+  role: string;
+  password?: string;
+  connection_string?: string;
+  region_code: string;
+  project_id: string;
+  paused: boolean;
+  metadata?: Record<string, any>;
 }
 
 export interface DatabaseConfigParameters {

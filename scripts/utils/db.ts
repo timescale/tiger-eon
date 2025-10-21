@@ -14,19 +14,22 @@ export const selectExistingService = async (
     // using the tiger cli, we can only get a connection string with
     // a password if the service was created on the same machine
     // otherwise, there is no way to fetch the password.
-    // in that case, the getConnectionString(serviceId, true // with password) will fail
+    // in that case, the getServiceDetails(serviceId, true // with password) will fail
     // so we will fallback to calling getConnectionString(serviceId, false) then prompt user
     // for password
-    log.info('Fetching connection string with password...');
-    const connectionString = await tiger.getConnectionString(
+    log.info('Fetching service details with password...');
+    const serviceDetails = await tiger.getServiceDetails(
       service.service_id,
       true,
     );
 
-    const config = parseConnectionString(connectionString);
     return {
       serviceId: service.service_id,
-      ...config,
+      host: serviceDetails.host,
+      port: serviceDetails.port,
+      database: serviceDetails.database,
+      user: serviceDetails.role,
+      password: serviceDetails.password || '',
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -44,11 +47,10 @@ export const selectExistingService = async (
       );
 
       try {
-        const connectionString = await tiger.getConnectionString(
+        const serviceDetails = await tiger.getServiceDetails(
           service.service_id,
           false,
         );
-        const config = parseConnectionString(connectionString);
 
         const userPassword = await password({
           message: 'Enter database password (or press Enter to skip):',
@@ -68,11 +70,14 @@ export const selectExistingService = async (
 
         return {
           serviceId: service.service_id,
-          ...config,
+          host: serviceDetails.host,
+          port: serviceDetails.port,
+          database: serviceDetails.database,
+          user: serviceDetails.role,
           password: userPassword,
         };
       } catch (fallbackError) {
-        throw new Error(`Failed to get connection string: ${fallbackError}`);
+        throw new Error(`Failed to get service details: ${fallbackError}`);
       }
     } else {
       throw error;
