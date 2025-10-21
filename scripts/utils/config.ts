@@ -1,9 +1,9 @@
-import { access, readFile, rename, writeFile } from 'fs/promises';
-import { constants, existsSync } from 'fs';
-import { EnvironmentVariable, McpConfig, McpConfigGroup } from '../types';
+import { readFile, rename, writeFile } from 'fs/promises';
+import { EnvironmentVariable, McpConfigGroup } from '../types';
 
 import { select } from '@inquirer/prompts';
 import { log } from './log';
+import { exists } from './file';
 
 const ENV_FILE = '.env';
 const MCP_CONFIG_FILE = 'mcp_config.json';
@@ -36,7 +36,9 @@ export const getEnvironmentVariables = async (): Promise<
   EnvironmentVariable[]
 > => {
   try {
-    await access(ENV_FILE, constants.F_OK);
+    if (!(await exists(ENV_FILE))) {
+      return [];
+    }
     const envContent = await readFile(ENV_FILE, 'utf-8');
 
     // Parse the content into EnvironmentVariable objects
@@ -121,9 +123,9 @@ export const checkExistingConfig = async (): Promise<EnvironmentVariable[]> => {
 };
 
 export const getMcpConfig = async (): Promise<McpConfigGroup> => {
-  const exists = existsSync(MCP_CONFIG_FILE);
-
-  if (!exists) return {};
+  if (!(await exists(MCP_CONFIG_FILE))) {
+    return {};
+  }
 
   let mcpConfig: McpConfigGroup;
   try {

@@ -1,13 +1,11 @@
-import { access } from 'fs/promises';
 import { log } from './log';
 import { confirm } from '@inquirer/prompts';
+import { exists } from './file';
 
 export async function startServices(): Promise<void> {
   console.log('\n=== Starting Services ===');
 
-  try {
-    await access('./start.sh');
-  } catch (error) {
+  if (!(await exists('./start.sh'))) {
     log.error('start.sh not found!');
     return;
   }
