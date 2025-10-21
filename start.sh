@@ -5,6 +5,22 @@ if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
+# Check if Docker is running
+if docker info >/dev/null 2>&1; then
+    echo "Docker daemon is running."
+else
+    echo "Docker daemon is not running."
+    echo -n "Please start Docker and press Enter to continue... "
+    read -r
+    # Re-check after user input
+    if ! docker info >/dev/null 2>&1; then
+        echo "Docker is still not running. Exiting."
+        exit 1
+    fi
+    echo "Docker is now running. Continuing..."
+fi
+
+read -r
 # Build services first
 echo "Building services..."
 docker compose build
@@ -55,10 +71,18 @@ fi
 echo "Configured services to start: $SERVICES"
 echo "Checking for updates..."
 docker compose pull $SERVICES
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to pull Docker images. Exiting."
+    exit 1
+fi
 
 # Start only the enabled services
 echo "Starting services..."
 docker compose up -d $SERVICES
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to start Docker services. Exiting."
+    exit 1
+fi
 
 echo "Services started successfully!"
 echo "Use 'docker compose ps' to see running services"
