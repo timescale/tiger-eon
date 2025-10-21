@@ -67,7 +67,7 @@ abstract class SlackConfig extends ConfigWithMcpServer {
     // Try to copy to clipboard if available
     try {
       await copyToClipboard(JSON.stringify(manifest, null, 2));
-      console.log('(he manifest has been copied to clipboard)\n');
+      console.log('(The manifest has been copied to clipboard)\n');
     } catch {}
 
     await input({ message: 'Press Enter after creating the app...' });
