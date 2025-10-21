@@ -5,16 +5,15 @@ import { ConfigWithMcpServer } from './config';
 import { log } from '../utils/log';
 
 export class LinearConfig extends ConfigWithMcpServer {
+  readonly name = 'Linear';
+  readonly description =
+    'This will configure the Tiger Linear MCP server (https://github.com/timescale/tiger-linear-mcp-server)';
+  readonly mcpName = 'linear';
+  readonly mcpConfig = {
+    url: 'http://tiger-linear-mcp-server/mcp',
+  };
+
   private apiKey: string | undefined;
-  constructor() {
-    super({
-      mcpName: 'linear',
-      url: 'http://tiger-linear-mcp-server/mcp',
-      name: 'Linear',
-      description:
-        'This will configure the Tiger Linear MCP server (https://github.com/timescale/tiger-linear-mcp-server)',
-    });
-  }
 
   async collect(): Promise<void> {
     const shouldOpen = await confirm({
@@ -31,6 +30,7 @@ export class LinearConfig extends ConfigWithMcpServer {
     this.apiKey = await input({ message: 'LINEAR_API_KEY:' });
     this.isConfigured = true;
   }
+
   protected async internalValidate(): Promise<boolean> {
     try {
       const res = await fetch('https://api.linear.app/graphql', {
@@ -65,6 +65,7 @@ export class LinearConfig extends ConfigWithMcpServer {
 
     return true;
   }
+
   getVariables(): EnvironmentVariable[] {
     return [{ key: 'LINEAR_API_KEY', value: this.apiKey }];
   }

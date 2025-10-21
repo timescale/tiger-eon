@@ -6,21 +6,19 @@ import { log } from '../utils/log';
 import { validateTokenHasCorrectPrefix } from '../utils/string';
 
 export class GithubConfig extends ConfigWithMcpServer {
+  readonly name = 'GitHub';
+  readonly description =
+    'This will configure the Tiger GitHub MCP server (https://github.com/timescale/tiger-gh-mcp-server)';
+  readonly mcpName = 'github';
+  readonly mcpConfig = {
+    url: 'http://tiger-gh-mcp-server/mcp',
+  };
+
   private static privateScopes = ['repo', 'read:org'];
   private static publicScopes = ['repo:status', 'public_repo'];
 
   private organization: string | undefined;
   private token: string | undefined;
-
-  constructor() {
-    super({
-      mcpName: 'github',
-      url: 'http://tiger-gh-mcp-server/mcp',
-      name: 'GitHub',
-      description:
-        'This will configure the Tiger GitHub MCP server (https://github.com/timescale/tiger-gh-mcp-server)',
-    });
-  }
 
   async collect(): Promise<void> {
     this.organization = await input({ message: 'GITHUB_ORG:' });
@@ -55,6 +53,7 @@ export class GithubConfig extends ConfigWithMcpServer {
     });
     this.isConfigured = true;
   }
+
   protected async internalValidate(): Promise<boolean> {
     try {
       const res = await fetch('https://api.github.com/user', {

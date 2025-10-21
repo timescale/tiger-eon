@@ -3,15 +3,11 @@ import { EnvironmentVariable } from '../types';
 import { Config } from './config';
 
 export class LogfireConfig extends Config {
+  readonly name = 'Logfire';
+  readonly description = 'Logfire provides observability and monitoring.';
+
   private token: string | undefined;
   private environment: string | undefined;
-
-  constructor() {
-    super({
-      name: 'Logfire',
-      description: 'Logfire provides observability and monitoring.',
-    });
-  }
 
   async collect(): Promise<void> {
     console.log('Logfire Configuration (Optional)');
@@ -28,9 +24,11 @@ export class LogfireConfig extends Config {
     });
     this.isConfigured = true;
   }
+
   protected internalValidate(): Promise<boolean> {
     return Promise.resolve(true);
   }
+
   getVariables(): EnvironmentVariable[] {
     return [
       { key: 'LOGFIRE_TOKEN', value: this.token },

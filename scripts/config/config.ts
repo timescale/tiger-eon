@@ -1,23 +1,11 @@
 import { EnvironmentVariable, McpConfig, McpConfigGroup } from '../types';
 import { log } from '../utils/log';
 
-export interface ConfigParams {
-  description?: string;
-  name: string;
-  required?: boolean;
-}
 export abstract class Config {
-  readonly name: string;
-  readonly description?: string;
-  readonly required: boolean;
-  protected isConfigured: boolean;
-
-  constructor({ description, name, required }: ConfigParams) {
-    this.description = description;
-    this.name = name;
-    this.required = required || false;
-    this.isConfigured = false;
-  }
+  abstract readonly name: string;
+  readonly description: string = '';
+  readonly required: boolean = false;
+  protected isConfigured = false;
 
   protected abstract internalValidate(): Promise<boolean>;
   abstract collect(): Promise<void>;
@@ -43,6 +31,7 @@ export abstract class Config {
   }
 
   abstract getVariables(): EnvironmentVariable[];
+
   getEmptyVariables(): EnvironmentVariable[] {
     return this.getVariables().map(({ key }) => ({ key: key }));
   }
@@ -56,24 +45,10 @@ export abstract class Config {
   }
 }
 
-export interface ConfigWithMcpServerParams extends ConfigParams, McpConfig {
-  mcpName: string;
-}
-
 export abstract class ConfigWithMcpServer extends Config {
-  readonly mcpConfig: McpConfig;
-  readonly mcpName: string;
+  abstract readonly mcpConfig: McpConfig;
+  abstract readonly mcpName: string;
 
-  constructor({
-    mcpName,
-    tool_prefix,
-    url,
-    ...baseConfig
-  }: ConfigWithMcpServerParams) {
-    super({ ...baseConfig });
-    this.mcpConfig = { tool_prefix, url };
-    this.mcpName = mcpName;
-  }
   getMcpConfigGroup(): McpConfigGroup {
     return {
       [this.mcpName]: { ...this.mcpConfig, disabled: !this.isConfigured },

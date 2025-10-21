@@ -6,15 +6,12 @@ import { validateTokenHasCorrectPrefix } from '../utils/string';
 import { log } from '../utils/log';
 
 export class AnthropicConfig extends Config {
+  readonly name = 'Anthropic';
+  readonly description =
+    'Configure the Anthropic API key, this is needed for the agent.';
+  readonly required = true;
+
   private apiKey: string | undefined;
-  constructor() {
-    super({
-      description:
-        'Configure the Anthropic API key, this is needed for the agent.',
-      name: 'Anthropic',
-      required: true,
-    });
-  }
 
   async collect(): Promise<void> {
     const shouldOpen = await confirm({
@@ -34,6 +31,7 @@ export class AnthropicConfig extends Config {
     });
     this.isConfigured = true;
   }
+
   protected async internalValidate(): Promise<boolean> {
     try {
       const response = await fetch('https://api.anthropic.com/v1/models', {
@@ -56,6 +54,7 @@ export class AnthropicConfig extends Config {
       return false;
     }
   }
+
   getVariables(): EnvironmentVariable[] {
     return [{ key: 'ANTHROPIC_API_KEY', value: this.apiKey }];
   }

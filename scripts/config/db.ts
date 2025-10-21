@@ -6,16 +6,15 @@ import { Config } from './config';
 import { confirm, select } from '@inquirer/prompts';
 
 export class DatabaseConfig extends Config {
+  readonly name = 'Database';
+  readonly description =
+    'Configure a TimescaleDB instance, where Slack messages + agent events are stored.';
+  readonly required = true;
   private config: DatabaseConfigParameters | undefined;
   private tiger: TigerCLI;
 
   constructor() {
-    super({
-      name: 'Database',
-      description:
-        'Configure a TimescaleDB instance, where Slack messages + agent events are stored.',
-      required: true,
-    });
+    super();
     this.tiger = new TigerCLI(process.env.TIGER_CMD || './download/tiger');
   }
 

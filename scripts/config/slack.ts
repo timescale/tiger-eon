@@ -5,17 +5,15 @@ import { ConfigWithMcpServer } from './config';
 import { validateTokenHasCorrectPrefix } from '../utils/string';
 
 abstract class SlackConfig extends ConfigWithMcpServer {
-  private config: SlackAppConfig;
+  readonly required = true;
+  readonly mcpName = 'slack';
+  readonly mcpConfig = {
+    url: 'http://tiger-slack-mcp-server/mcp',
+  };
+
+  protected abstract readonly config: SlackAppConfig;
   private tokens: SlackTokens | undefined;
-  constructor(name: string, config: SlackAppConfig) {
-    super({
-      name: `Slack ${name} App`,
-      required: true,
-      mcpName: 'slack',
-      url: 'http://tiger-slack-mcp-server/mcp',
-    });
-    this.config = config;
-  }
+
   async collect(): Promise<void> {
     const manifest = await downloadJson(this.config.manifestUrl);
 
@@ -103,6 +101,7 @@ abstract class SlackConfig extends ConfigWithMcpServer {
     this.tokens = { botToken, appToken };
     this.isConfigured = true;
   }
+
   protected async internalValidate(): Promise<boolean> {
     try {
       const response = await fetch('https://slack.com/api/auth.test', {
@@ -133,25 +132,23 @@ abstract class SlackConfig extends ConfigWithMcpServer {
 }
 
 export class AgentSlackConfig extends SlackConfig {
-  constructor() {
-    super('Agent', {
-      name: 'eon',
-      description: 'TigerData Knowledge Base Agent',
-      manifestUrl:
-        'https://raw.githubusercontent.com/timescale/tiger-agents-for-work/main/slack-manifest.json',
-      type: 'agent',
-    });
-  }
+  readonly name = 'Slack Agent App';
+  protected readonly config: SlackAppConfig = {
+    name: 'eon',
+    description: 'TigerData Knowledge Base Agent',
+    manifestUrl:
+      'https://raw.githubusercontent.com/timescale/tiger-agents-for-work/main/slack-manifest.json',
+    type: 'agent',
+  };
 }
 
 export class IngestSlackConfig extends SlackConfig {
-  constructor() {
-    super('Ingest', {
-      name: 'tiger-slack-ingest',
-      description: 'Receives all messages/reactions from public channels',
-      manifestUrl:
-        'https://raw.githubusercontent.com/timescale/tiger-slack/main/slack-app-manifest.json',
-      type: 'ingest',
-    });
-  }
+  readonly name = 'Slack Ingest App';
+  protected readonly config: SlackAppConfig = {
+    name: 'tiger-slack-ingest',
+    description: 'Receives all messages/reactions from public channels',
+    manifestUrl:
+      'https://raw.githubusercontent.com/timescale/tiger-slack/main/slack-app-manifest.json',
+    type: 'ingest',
+  };
 }
