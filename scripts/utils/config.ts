@@ -3,7 +3,6 @@ import { EnvironmentVariable, McpConfigGroup } from '../types';
 
 import { select } from '@inquirer/prompts';
 import { log } from './log';
-import { exists } from './file';
 
 const ENV_FILE = '.env';
 const MCP_CONFIG_FILE = 'mcp_config.json';
@@ -36,9 +35,6 @@ export const getEnvironmentVariables = async (): Promise<
   EnvironmentVariable[]
 > => {
   try {
-    if (!(await exists(ENV_FILE))) {
-      return [];
-    }
     const envContent = await readFile(ENV_FILE, 'utf-8');
 
     // Parse the content into EnvironmentVariable objects
@@ -66,8 +62,7 @@ export const getEnvironmentVariables = async (): Promise<
     }
 
     return variables;
-  } catch {
-    // File doesn't exist, return empty array
+  } catch (error) {
     return [];
   }
 };
@@ -123,10 +118,6 @@ export const checkExistingConfig = async (): Promise<EnvironmentVariable[]> => {
 };
 
 export const getMcpConfig = async (): Promise<McpConfigGroup> => {
-  if (!(await exists(MCP_CONFIG_FILE))) {
-    return {};
-  }
-
   let mcpConfig: McpConfigGroup;
   try {
     mcpConfig = JSON.parse(
@@ -134,8 +125,7 @@ export const getMcpConfig = async (): Promise<McpConfigGroup> => {
     ) as McpConfigGroup;
 
     return mcpConfig;
-  } catch (error) {
-    log.error('Failed to parse mcp config file, will create a new one', error);
+  } catch {
     return {};
   }
 };
