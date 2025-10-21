@@ -98,7 +98,7 @@ export const createNewTigerService = async (
       port: response.port || response.endpoint?.port,
       database: response.database,
       user: response.role,
-      password: response.initial_password,
+      password: response.password,
     };
   } catch (error) {
     log.error(`${error}`);
