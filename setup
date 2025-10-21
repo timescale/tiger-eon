@@ -1,0 +1,14 @@
+#!/bin/bash
+
+downloadDir=$(pwd)/download
+
+# get bun
+bunCmd=$(which bun 2>/dev/null || echo "$downloadDir/bun/bin/bun")
+if [ ! -f "$bunCmd" ]; then
+    echo Downloading bun to "$bunCmd"
+    curl -fsSL https://bun.sh/install | BUN_INSTALL=./download/bun bash
+fi
+
+# Run the setup
+"$bunCmd" install
+exec "$bunCmd" setup

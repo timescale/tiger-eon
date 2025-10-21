@@ -68,7 +68,7 @@ Stay up-to-date with what's happening across your projects and team members with
 ``` bash
 git clone git@github.com:timescale/tiger-eon.git
 cd tiger-eon
-./setup-tiger-eon.sh
+./setup
 ```
 
 ## Manual Setup
@@ -77,6 +77,7 @@ cd tiger-eon
 git clone git@github.com:timescale/tiger-eon.git
 cd tiger-eon
 cp .env.sample .env
+cp mcp_config.json.sample mcp_config.json
 ```
 
 ### Setup Anthropic Token

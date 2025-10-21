@@ -1,0 +1,16 @@
+{
+  "jest.jestCommandLine": "npm run test --",
+  "jest.rootPath": ".",
+  "jest.autoRun": "off",
+  "jest.showCoverageOnLoad": false,
+  "jest.runMode": "on-demand",
+  "jest.disabledWorkspaceFolders": [],
+  "jest.testExplorer": {
+    "enabled": true
+  },
+  "jest.outputConfig": {
+    "revealOutput": "on-run",
+    "revealOutputOnError": true
+  },
+  "typescript.preferences.includePackageJsonAutoImports": "on"
+}

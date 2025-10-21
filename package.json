@@ -1,0 +1,28 @@
+{
+  "name": "tiger-eon-setup",
+  "version": "1.0.0",
+  "description": "Interactive setup script for Tiger Agent",
+  "type": "module",
+  "scripts": {
+    "setup": "TIGER_CMD=$(./tiger_cli_setup.sh) tsx scripts/setup.ts",
+    "target": "tsx scripts/run.ts",
+    "format": "prettier --write scripts/**/*.ts",
+    "format:check": "prettier --check scripts/**/*.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "@inquirer/password": "^4.0.21",
+    "@inquirer/prompts": "^7.8.6",
+    "tsx": "^4.20.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "jest": "^30.2.0",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.5",
+    "typescript": "^5.0.0"
+  }
+}
