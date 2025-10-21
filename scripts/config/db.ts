@@ -107,7 +107,7 @@ export class DatabaseConfig extends Config {
     return true;
   }
 
-  getVariables(): EnvironmentVariable[] {
+  getVariablesInternal(): EnvironmentVariable[] {
     return [
       { key: 'PGHOST', value: this.config?.host },
       { key: 'PGPORT', value: `${this.config?.port}` },

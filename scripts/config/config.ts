@@ -30,14 +30,25 @@ export abstract class Config {
     return true;
   }
 
-  abstract getVariables(): EnvironmentVariable[];
+  disable(): void {
+    this.isConfigured = false;
+  }
+
+  getVariables(): EnvironmentVariable[] {
+    const variables = this.getVariablesInternal();
+    return this.isConfigured
+      ? variables
+      : variables.map(({ key }) => ({ key: key }));
+  }
+
+  abstract getVariablesInternal(): EnvironmentVariable[];
 
   getEmptyVariables(): EnvironmentVariable[] {
-    return this.getVariables().map(({ key }) => ({ key: key }));
+    return this.getVariablesInternal().map(({ key }) => ({ key: key }));
   }
 
   isAlreadyConfigured(currentVariables: EnvironmentVariable[]): boolean {
-    const expectedVariables = this.getVariables();
+    const expectedVariables = this.getVariablesInternal();
 
     return expectedVariables.every((variable) =>
       currentVariables.some((x) => x.key === variable.key && !!x.value),
@@ -51,7 +62,10 @@ export abstract class ConfigWithMcpServer extends Config {
 
   getMcpConfigGroup(): McpConfigGroup {
     return {
-      [this.mcpName]: { ...this.mcpConfig, disabled: !this.isConfigured },
+      [this.mcpName]: {
+        ...this.mcpConfig,
+        disabled: !this.isConfigured,
+      },
     };
   }
 }

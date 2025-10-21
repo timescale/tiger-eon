@@ -117,7 +117,7 @@ abstract class SlackConfig extends ConfigWithMcpServer {
     }
   }
 
-  getVariables(): EnvironmentVariable[] {
+  getVariablesInternal(): EnvironmentVariable[] {
     return [
       {
         key: `SLACK_${this.config.type.toUpperCase()}_APP_TOKEN`,

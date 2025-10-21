@@ -89,7 +89,7 @@ export class GithubConfig extends ConfigWithMcpServer {
     return true;
   }
 
-  getVariables(): EnvironmentVariable[] {
+  getVariablesInternal(): EnvironmentVariable[] {
     return [
       { key: 'GITHUB_ORG', value: this.organization },
       { key: 'GITHUB_TOKEN', value: this.token },

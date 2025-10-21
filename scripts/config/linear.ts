@@ -66,7 +66,7 @@ export class LinearConfig extends ConfigWithMcpServer {
     return true;
   }
 
-  getVariables(): EnvironmentVariable[] {
+  getVariablesInternal(): EnvironmentVariable[] {
     return [{ key: 'LINEAR_API_KEY', value: this.apiKey }];
   }
 }

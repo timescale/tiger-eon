@@ -76,7 +76,6 @@ export default async function setup() {
         }
       }
 
-      let disableConfig = false;
       while (true) {
         if (!config.required) {
           const shouldSetupOptional = await confirm({
@@ -85,25 +84,19 @@ export default async function setup() {
           });
 
           if (!shouldSetupOptional) {
-            disableConfig = true;
+            config.disable();
             break;
           }
         }
 
         await config.collect();
 
-        const isValid = await config.validate();
-
-        if (isValid) {
+        if (await config.validate()) {
           break;
         }
       }
 
-      // in the case that the user skips an optional config,
-      // we should store empty values of that config
-      const vars = disableConfig
-        ? config.getEmptyVariables()
-        : config.getVariables();
+      const vars = config.getVariables();
 
       await upsertEnvironmentVariables(vars);
 
