@@ -98,13 +98,16 @@ export class DatabaseConfig extends Config {
       );
       this.config = await createNewTigerService(this.tiger);
     }
+    this.isConfigured = true;
   }
+
   protected async internalValidate(): Promise<boolean> {
     if (this.config!.serviceId) {
       await this.tiger.waitForServiceReady(this.config!.serviceId);
     }
     return true;
   }
+
   getVariables(): EnvironmentVariable[] {
     return [
       { key: 'PGHOST', value: this.config?.host },
