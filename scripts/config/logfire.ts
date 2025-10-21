@@ -10,7 +10,6 @@ export class LogfireConfig extends Config {
   private environment: string | undefined;
 
   async collect(): Promise<void> {
-    console.log('Logfire Configuration (Optional)');
     console.log(
       'Logfire provides observability and monitoring. Tiger Agent will work without it.',
     );
