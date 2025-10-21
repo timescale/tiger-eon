@@ -19,23 +19,17 @@ services:
 
   tiger-agent:
     image: ghcr.io/timescale/tiger-agent:latest
+    env_file:
+      - .env
     environment:
-      PGHOST: ${PGHOST}
-      PGPORT: ${PGPORT}
-      PGDATABASE: ${PGDATABASE}
-      PGUSER: ${PGUSER}
-      PGPASSWORD: ${PGPASSWORD}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       SLACK_APP_TOKEN: ${SLACK_AGENT_APP_TOKEN}
       SLACK_BOT_TOKEN: ${SLACK_AGENT_BOT_TOKEN}
       SERVICE_NAME: ${SERVICE_NAME:-tiger-eon}
-      LOGFIRE_TOKEN: ${LOGFIRE_TOKEN}
-      LOGFIRE_ENVIRONMENT: ${LOGFIRE_ENVIRONMENT}
-      LOGFIRE_TRACES_ENDPOINT: ${LOGFIRE_TRACES_ENDPOINT}
-      LOGFIRE_LOGS_ENDPOINT: ${LOGFIRE_LOGS_ENDPOINT}
     volumes:
       - ./mcp_config.json:/app/mcp_config.json:ro
       - ./prompts:/app/prompts:ro
+    ports:
+      - "5678:5678"
     command:
       [
         "uv",
@@ -48,41 +42,36 @@ services:
 
   tiger-slack-ingest:
     image: ghcr.io/timescale/tiger-slack-ingest:latest
-    environment: &slack_env_vars
-      PGHOST: ${PGHOST}
-      PGPORT: ${PGPORT}
-      PGDATABASE: ${PGDATABASE}
-      PGUSER: ${PGUSER}
-      PGPASSWORD: ${PGPASSWORD}
+    env_file:
+      - .env
+    environment:
       SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
       SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
 
   tiger-slack-mcp-server:
     image: ghcr.io/timescale/tiger-slack-mcp:latest
+    env_file:
+      - .env
     environment:
-      <<: *slack_env_vars
       PORT: 80
     ports:
       - "3001:80"
 
   tiger-gh-mcp-server:
     image: ghcr.io/timescale/tiger-github-mcp:latest
+    env_file:
+      - .env
     environment:
       PORT: 80
-      GITHUB_ORG: ${GITHUB_ORG}
-      GITHUB_TOKEN: ${GITHUB_TOKEN}
-      LOGFIRE_TOKEN: ${LOGFIRE_TOKEN}
-      LOGFIRE_ENVIRONMENT: ${LOGFIRE_ENVIRONMENT}
-      LOGFIRE_TRACES_ENDPOINT: ${LOGFIRE_TRACES_ENDPOINT}
-      LOGFIRE_LOGS_ENDPOINT: ${LOGFIRE_LOGS_ENDPOINT}
     ports:
       - "3002:80"
 
   tiger-linear-mcp-server:
     image: ghcr.io/timescale/tiger-linear-mcp:latest
+    env_file:
+      - .env
     environment:
       PORT: 80
-      LINEAR_API_KEY: ${LINEAR_API_KEY}
     ports:
       - "3003:80"
 volumes:
