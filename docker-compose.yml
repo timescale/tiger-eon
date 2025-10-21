@@ -74,9 +74,5 @@ services:
       PORT: 80
     ports:
       - "3003:80"
-
-  curl:
-    image: curlimages/curl
-    command: sleep infinitely
 volumes:
   postgres_data:
