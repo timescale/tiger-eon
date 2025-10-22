@@ -16,7 +16,7 @@ export class DatabaseConfig extends Config implements ConfigWithDockerProfile {
   readonly required = true;
   private config: DatabaseConfigParameters | undefined;
   private tiger: TigerCLI;
-  private useTigerCloud: boolean = false;
+  private useTigerCloud = false;
 
   constructor() {
     super();

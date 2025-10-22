@@ -12,8 +12,8 @@ export class LinearConfig
   extends Config
   implements ConfigWithDockerProfile, ConfigWithMcpServer
 {
-  dockerProfile: string = 'linear';
-  enableDockerProfile: boolean = false;
+  dockerProfile = 'linear';
+  enableDockerProfile = false;
   readonly name = 'Linear';
   readonly description =
     'This will configure the Tiger Linear MCP server (https://github.com/timescale/tiger-linear-mcp-server)';
