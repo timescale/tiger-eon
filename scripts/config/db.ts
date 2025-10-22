@@ -133,8 +133,4 @@ export class DatabaseConfig extends Config implements ConfigWithDockerProfile {
       { key: 'PGPASSWORD', value: this.config?.password },
     ];
   }
-
-  getDockerProfile(): string | null {
-    return this.useTigerCloud ? null : 'localdb';
-  }
 }

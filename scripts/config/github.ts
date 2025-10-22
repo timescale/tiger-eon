@@ -105,8 +105,4 @@ export class GithubConfig
       { key: 'GITHUB_TOKEN', value: this.token },
     ];
   }
-
-  getDockerProfile(): string {
-    return 'github';
-  }
 }
