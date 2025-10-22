@@ -10,7 +10,7 @@ const setupComplete = (startedServices: boolean) => {
   );
 
   console.log('To control service containers, you can:');
-  console.log('• Start services: ./start.sh');
+  console.log('• Start services: docker compose up -d --build');
   console.log('• Stop services: docker compose down');
   console.log('• Check logs: docker compose logs -f tiger-agent');
   console.log('• View services: docker compose ps');
@@ -39,14 +39,18 @@ export async function startServices(): Promise<void> {
     const { spawn } = await import('child_process');
 
     // First pull the latest images
-    const pullProcess = spawn('docker', ['compose', 'pull'], { stdio: 'inherit' });
+    const pullProcess = spawn('docker', ['compose', 'pull'], {
+      stdio: 'inherit',
+    });
 
     await new Promise<void>((resolve, reject) => {
       pullProcess.on('close', (code) => {
         if (code === 0) {
           resolve();
         } else {
-          reject(new Error(`docker compose pull failed with exit code ${code}`));
+          reject(
+            new Error(`docker compose pull failed with exit code ${code}`),
+          );
         }
       });
 
@@ -56,7 +60,9 @@ export async function startServices(): Promise<void> {
     });
 
     // Then start the services
-    const startProcess = spawn('docker', ['compose', 'up', '-d', '--build'], { stdio: 'inherit' });
+    const startProcess = spawn('docker', ['compose', 'up', '-d', '--build'], {
+      stdio: 'inherit',
+    });
 
     await new Promise<void>((resolve, reject) => {
       startProcess.on('close', (code) => {
@@ -80,6 +86,8 @@ export async function startServices(): Promise<void> {
     console.log(
       'Configuration written successfully, but service startup failed.',
     );
-    console.log('You can manually start services later by running: ./start.sh');
+    console.log(
+      'You can manually start services later by running: docker compose up -d --build',
+    );
   }
 }

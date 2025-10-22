@@ -125,13 +125,7 @@ Follow the steps for seting up Slack Ingest/MCP, except:
 
 ## Start Services
 
-To start only configured services (based on `mcp_config.json`):
-
-```bash
-./start.sh
-```
-
-To start all services:
+To start only configured services (based on COMPOSE_PROFILES in .env):
 
 ```bash
 docker compose up -d --build
