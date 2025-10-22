@@ -1,6 +1,6 @@
 import { log } from './log';
 import { confirm } from '@inquirer/prompts';
-import { exists } from './file';
+import { composePull, composeUp } from './docker';
 
 const setupComplete = (startedServices: boolean) => {
   console.log('\n🎉 Tiger Agent setup complete!\n');
@@ -36,48 +36,12 @@ export async function startServices(): Promise<void> {
   log.info('Starting Tiger Agent services...');
 
   try {
-    const { spawn } = await import('child_process');
+    // let's pull latest images first
+    composePull();
 
-    // First pull the latest images
-    const pullProcess = spawn('docker', ['compose', 'pull'], {
-      stdio: 'inherit',
-    });
+    composeUp();
 
-    await new Promise<void>((resolve, reject) => {
-      pullProcess.on('close', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(
-            new Error(`docker compose pull failed with exit code ${code}`),
-          );
-        }
-      });
-
-      pullProcess.on('error', (error) => {
-        reject(error);
-      });
-    });
-
-    // Then start the services
-    const startProcess = spawn('docker', ['compose', 'up', '-d', '--build'], {
-      stdio: 'inherit',
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      startProcess.on('close', (code) => {
-        if (code === 0) {
-          setupComplete(true);
-          resolve();
-        } else {
-          reject(new Error(`docker compose up failed with exit code ${code}`));
-        }
-      });
-
-      startProcess.on('error', (error) => {
-        reject(error);
-      });
-    });
+    setupComplete(true);
   } catch (error) {
     log.error(
       `Failed to start services: ${error instanceof Error ? error.message : error}`,
