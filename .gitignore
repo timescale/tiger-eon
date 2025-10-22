@@ -1,7 +1,7 @@
-.env
+.env*
+!.env.sample
 download
 node_modules
 coverage/
 mcp_config.json
 bun.lock
-.env.backup*
