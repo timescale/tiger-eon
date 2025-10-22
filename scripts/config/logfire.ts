@@ -28,7 +28,7 @@ export class LogfireConfig extends Config {
     return Promise.resolve(true);
   }
 
-  getVariablesInternal(): EnvironmentVariable[] {
+  getVariables(): EnvironmentVariable[] {
     return [
       { key: 'LOGFIRE_TOKEN', value: this.token },
       { key: 'LOGFIRE_ENVIRONMENT', value: this.environment },

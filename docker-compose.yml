@@ -16,6 +16,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    profiles:
+      - localdb
 
   tiger-agent:
     image: ghcr.io/timescale/tiger-agent:latest
@@ -65,6 +67,8 @@ services:
       PORT: 80
     ports:
       - "3002:80"
+    profiles:
+      - github
 
   tiger-linear-mcp-server:
     image: ghcr.io/timescale/tiger-linear-mcp:latest
@@ -74,5 +78,7 @@ services:
       PORT: 80
     ports:
       - "3003:80"
+    profiles:
+      - linear
 volumes:
   postgres_data:

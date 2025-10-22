@@ -1,5 +1,11 @@
-import { EnvironmentVariable, McpConfig, McpConfigGroup } from '../types';
+import { EnvironmentVariable } from '../types';
+import {
+  upsertDockerProfile,
+  upsertEnvironmentVariables,
+  upsertMcpConfig,
+} from '../utils/config';
 import { log } from '../utils/log';
+import { hasDockerProfile, hasMcpServer } from '../utils/type';
 
 export abstract class Config {
   abstract readonly name: string;
@@ -32,36 +38,42 @@ export abstract class Config {
 
   disable(): void {
     this.isConfigured = false;
-  }
 
-  getVariables(): EnvironmentVariable[] {
-    const variables = this.getVariablesInternal();
-    return this.isConfigured
+    if (hasDockerProfile(this)) {
+      this.enableDockerProfile = false;
+    }
+  }
+  async persist(): Promise<void> {
+    const variables = this.getVariables();
+    const variablesToUse = this.isConfigured
       ? variables
       : variables.map(({ key }) => ({ key: key }));
+
+    await upsertEnvironmentVariables(variablesToUse);
+
+    if (hasMcpServer(this)) {
+      const mcpConfig = {
+        [this.mcpName]: {
+          ...this.mcpConfig,
+          disabled: !this.isConfigured,
+        },
+      };
+
+      await upsertMcpConfig(mcpConfig);
+    }
+
+    if (hasDockerProfile(this)) {
+      await upsertDockerProfile(this.dockerProfile, this.enableDockerProfile);
+    }
   }
 
-  abstract getVariablesInternal(): EnvironmentVariable[];
+  protected abstract getVariables(): EnvironmentVariable[];
 
   isAlreadyConfigured(currentVariables: EnvironmentVariable[]): boolean {
-    const expectedVariables = this.getVariablesInternal();
+    const expectedVariables = this.getVariables();
 
     return expectedVariables.every((variable) =>
       currentVariables.some((x) => x.key === variable.key && !!x.value),
     );
-  }
-}
-
-export abstract class ConfigWithMcpServer extends Config {
-  abstract readonly mcpConfig: McpConfig;
-  abstract readonly mcpName: string;
-
-  getMcpConfigGroup(): McpConfigGroup {
-    return {
-      [this.mcpName]: {
-        ...this.mcpConfig,
-        disabled: !this.isConfigured,
-      },
-    };
   }
 }

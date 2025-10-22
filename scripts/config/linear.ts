@@ -1,10 +1,19 @@
-import { EnvironmentVariable } from '../types';
+import {
+  ConfigWithDockerProfile,
+  ConfigWithMcpServer,
+  EnvironmentVariable,
+} from '../types';
 import { openBrowser } from '../utils';
 import { confirm, input } from '@inquirer/prompts';
-import { ConfigWithMcpServer } from './config';
 import { log } from '../utils/log';
+import { Config } from './config';
 
-export class LinearConfig extends ConfigWithMcpServer {
+export class LinearConfig
+  extends Config
+  implements ConfigWithDockerProfile, ConfigWithMcpServer
+{
+  dockerProfile: string = 'linear';
+  enableDockerProfile: boolean = false;
   readonly name = 'Linear';
   readonly description =
     'This will configure the Tiger Linear MCP server (https://github.com/timescale/tiger-linear-mcp-server)';
@@ -29,6 +38,7 @@ export class LinearConfig extends ConfigWithMcpServer {
 
     this.apiKey = await input({ message: 'LINEAR_API_KEY:' });
     this.isConfigured = true;
+    this.enableDockerProfile = true;
   }
 
   protected async internalValidate(): Promise<boolean> {
@@ -66,7 +76,7 @@ export class LinearConfig extends ConfigWithMcpServer {
     return true;
   }
 
-  getVariablesInternal(): EnvironmentVariable[] {
+  getVariables(): EnvironmentVariable[] {
     return [{ key: 'LINEAR_API_KEY', value: this.apiKey }];
   }
 }

@@ -58,3 +58,12 @@ export interface McpConfig {
 }
 
 export type McpConfigGroup = Record<string, McpConfig>;
+
+export interface ConfigWithDockerProfile {
+  readonly dockerProfile: string;
+  enableDockerProfile: boolean;
+}
+export interface ConfigWithMcpServer {
+  readonly mcpConfig: McpConfig;
+  readonly mcpName: string;
+}

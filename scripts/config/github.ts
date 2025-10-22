@@ -1,11 +1,20 @@
 import { confirm, input } from '@inquirer/prompts';
-import { EnvironmentVariable } from '../types';
+import {
+  ConfigWithDockerProfile,
+  ConfigWithMcpServer,
+  EnvironmentVariable,
+} from '../types';
 import { openBrowser } from '../utils';
-import { ConfigWithMcpServer } from './config';
 import { log } from '../utils/log';
 import { validateTokenHasCorrectPrefix } from '../utils/string';
+import { Config } from './config';
 
-export class GithubConfig extends ConfigWithMcpServer {
+export class GithubConfig
+  extends Config
+  implements ConfigWithMcpServer, ConfigWithDockerProfile
+{
+  readonly dockerProfile = 'github';
+  enableDockerProfile = false;
   readonly name = 'GitHub';
   readonly description =
     'This will configure the Tiger GitHub MCP server (https://github.com/timescale/tiger-gh-mcp-server)';
@@ -52,6 +61,7 @@ export class GithubConfig extends ConfigWithMcpServer {
       validate: (val) => validateTokenHasCorrectPrefix(val, 'ghp_'),
     });
     this.isConfigured = true;
+    this.enableDockerProfile = true;
   }
 
   protected async internalValidate(): Promise<boolean> {
@@ -89,10 +99,14 @@ export class GithubConfig extends ConfigWithMcpServer {
     return true;
   }
 
-  getVariablesInternal(): EnvironmentVariable[] {
+  getVariables(): EnvironmentVariable[] {
     return [
       { key: 'GITHUB_ORG', value: this.organization },
       { key: 'GITHUB_TOKEN', value: this.token },
     ];
+  }
+
+  getDockerProfile(): string {
+    return 'github';
   }
 }

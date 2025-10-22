@@ -1,30 +1,37 @@
 import { TigerCLI } from '../tiger';
-import { DatabaseConfigParameters, EnvironmentVariable } from '../types';
+import {
+  ConfigWithDockerProfile,
+  DatabaseConfigParameters,
+  EnvironmentVariable,
+} from '../types';
 import { createNewTigerService, selectExistingService } from '../utils/db';
 import { log } from '../utils/log';
-import { Config } from './config';
 import { confirm, select } from '@inquirer/prompts';
+import { Config } from './config';
 
-export class DatabaseConfig extends Config {
+export class DatabaseConfig extends Config implements ConfigWithDockerProfile {
   readonly name = 'Database';
   readonly description =
     'Configure a TimescaleDB instance, where Slack messages + agent events are stored.';
   readonly required = true;
   private config: DatabaseConfigParameters | undefined;
   private tiger: TigerCLI;
+  private useTigerCloud: boolean = false;
 
   constructor() {
     super();
     this.tiger = new TigerCLI(process.env.TIGER_CMD || './download/tiger');
   }
+  dockerProfile: string = 'localdb';
+  enableDockerProfile: boolean = false;
 
   async collect(): Promise<void> {
-    const useTigerCloud = await confirm({
+    this.useTigerCloud = await confirm({
       message: 'Do you want to use a hosted Tiger Cloud Database?',
       default: true,
     });
 
-    if (!useTigerCloud) {
+    if (!this.useTigerCloud) {
       log.info('Will use local docker-compose database');
 
       // return a config that targets the docker containers
@@ -35,6 +42,10 @@ export class DatabaseConfig extends Config {
         user: 'tsdbadmin',
         password: 'password',
       };
+
+      this.enableDockerProfile = true;
+      this.isConfigured = true;
+      return;
     }
 
     log.success(
@@ -101,13 +112,19 @@ export class DatabaseConfig extends Config {
   }
 
   protected async internalValidate(): Promise<boolean> {
-    if (this.config!.serviceId) {
-      await this.tiger.waitForServiceReady(this.config!.serviceId);
+    try {
+      if (this.useTigerCloud) {
+        await this.tiger.waitForServiceReady(this.config?.serviceId || '');
+        return true;
+      } else {
+        return true;
+      }
+    } catch {
+      return false;
     }
-    return true;
   }
 
-  getVariablesInternal(): EnvironmentVariable[] {
+  getVariables(): EnvironmentVariable[] {
     return [
       { key: 'PGHOST', value: this.config?.host },
       { key: 'PGPORT', value: `${this.config?.port}` },
@@ -115,5 +132,9 @@ export class DatabaseConfig extends Config {
       { key: 'PGUSER', value: this.config?.user },
       { key: 'PGPASSWORD', value: this.config?.password },
     ];
+  }
+
+  getDockerProfile(): string | null {
+    return this.useTigerCloud ? null : 'localdb';
   }
 }

@@ -23,11 +23,6 @@ const setupComplete = (startedServices: boolean) => {
 export async function startServices(): Promise<void> {
   console.log('\n=== Starting Services ===');
 
-  if (!(await exists('./start.sh'))) {
-    log.error('start.sh not found!');
-    return;
-  }
-
   const shouldStart = await confirm({
     message: 'Do you want to start the selected services now?',
     default: true,
@@ -42,7 +37,26 @@ export async function startServices(): Promise<void> {
 
   try {
     const { spawn } = await import('child_process');
-    const startProcess = spawn('./start.sh', [], { stdio: 'inherit' });
+
+    // First pull the latest images
+    const pullProcess = spawn('docker', ['compose', 'pull'], { stdio: 'inherit' });
+
+    await new Promise<void>((resolve, reject) => {
+      pullProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`docker compose pull failed with exit code ${code}`));
+        }
+      });
+
+      pullProcess.on('error', (error) => {
+        reject(error);
+      });
+    });
+
+    // Then start the services
+    const startProcess = spawn('docker', ['compose', 'up', '-d', '--build'], { stdio: 'inherit' });
 
     await new Promise<void>((resolve, reject) => {
       startProcess.on('close', (code) => {
@@ -50,7 +64,7 @@ export async function startServices(): Promise<void> {
           setupComplete(true);
           resolve();
         } else {
-          reject(new Error(`start.sh failed with exit code ${code}`));
+          reject(new Error(`docker compose up failed with exit code ${code}`));
         }
       });
 
