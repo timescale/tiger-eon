@@ -470,20 +470,20 @@ API_KEY=test-key
     });
 
     it('should add a Docker profile to existing COMPOSE_PROFILES', async () => {
-      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=localdb';
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db';
       mockReadFile.mockResolvedValue(existingEnv);
 
       await upsertDockerProfile('github', true);
 
       expect(mockWriteFile).toHaveBeenCalledWith(
         '.env',
-        'API_KEY=test-key\nCOMPOSE_PROFILES=localdb,github',
+        'API_KEY=test-key\nCOMPOSE_PROFILES=db,github',
         'utf-8',
       );
     });
 
     it('should not add a Docker profile if it already exists in COMPOSE_PROFILES', async () => {
-      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=localdb,github';
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db,github';
       mockReadFile.mockResolvedValue(existingEnv);
 
       await upsertDockerProfile('github', true);
@@ -493,21 +493,20 @@ API_KEY=test-key
     });
 
     it('should remove a Docker profile from COMPOSE_PROFILES', async () => {
-      const existingEnv =
-        'API_KEY=test-key\nCOMPOSE_PROFILES=localdb,github,linear';
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db,github,linear';
       mockReadFile.mockResolvedValue(existingEnv);
 
       await upsertDockerProfile('github', false);
 
       expect(mockWriteFile).toHaveBeenCalledWith(
         '.env',
-        'API_KEY=test-key\nCOMPOSE_PROFILES=localdb,linear',
+        'API_KEY=test-key\nCOMPOSE_PROFILES=db,linear',
         'utf-8',
       );
     });
 
     it('should not modify COMPOSE_PROFILES when trying to remove non-existent profile', async () => {
-      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=localdb';
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db';
       mockReadFile.mockResolvedValue(existingEnv);
 
       await upsertDockerProfile('github', false);
@@ -548,20 +547,20 @@ API_KEY=test-key
     });
 
     it('should handle multiple profiles in COMPOSE_PROFILES correctly', async () => {
-      const existingEnv = 'COMPOSE_PROFILES=localdb,github,linear,monitoring';
+      const existingEnv = 'COMPOSE_PROFILES=db,github,linear,monitoring';
       mockReadFile.mockResolvedValue(existingEnv);
 
       await upsertDockerProfile('linear', false);
 
       expect(mockWriteFile).toHaveBeenCalledWith(
         '.env',
-        'COMPOSE_PROFILES=localdb,github,monitoring',
+        'COMPOSE_PROFILES=db,github,monitoring',
         'utf-8',
       );
     });
 
     it('should handle profiles with whitespace in COMPOSE_PROFILES', async () => {
-      const existingEnv = 'COMPOSE_PROFILES= localdb , github , linear ';
+      const existingEnv = 'COMPOSE_PROFILES= db , github , linear ';
       mockReadFile.mockResolvedValue(existingEnv);
 
       await upsertDockerProfile('monitoring', true);
@@ -570,7 +569,7 @@ API_KEY=test-key
       // Profile names are cleaned up and joined with commas (no spaces)
       expect(mockWriteFile).toHaveBeenCalledWith(
         '.env',
-        'COMPOSE_PROFILES=localdb,github,linear,monitoring',
+        'COMPOSE_PROFILES=db,github,linear,monitoring',
         'utf-8',
       );
     });
@@ -601,7 +600,7 @@ API_KEY=test-key
     it('should preserve other environment variables when modifying Docker profiles', async () => {
       const existingEnv = `API_KEY=secret123
 DATABASE_URL=postgres://localhost:5432/db
-COMPOSE_PROFILES=localdb
+COMPOSE_PROFILES=db
 LOG_LEVEL=info`;
       mockReadFile.mockResolvedValue(existingEnv);
 
@@ -609,7 +608,7 @@ LOG_LEVEL=info`;
 
       expect(mockWriteFile).toHaveBeenCalledWith(
         '.env',
-        'API_KEY=secret123\nDATABASE_URL=postgres://localhost:5432/db\nCOMPOSE_PROFILES=localdb,github\nLOG_LEVEL=info',
+        'API_KEY=secret123\nDATABASE_URL=postgres://localhost:5432/db\nCOMPOSE_PROFILES=db,github\nLOG_LEVEL=info',
         'utf-8',
       );
     });

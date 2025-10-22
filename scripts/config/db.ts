@@ -22,7 +22,7 @@ export class DatabaseConfig extends Config implements ConfigWithDockerProfile {
     super();
     this.tiger = new TigerCLI(process.env.TIGER_CMD || './download/tiger');
   }
-  dockerProfile: string = 'localdb';
+  dockerProfile: string = 'db';
   enableDockerProfile: boolean = false;
 
   async collect(): Promise<void> {
