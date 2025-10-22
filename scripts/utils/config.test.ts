@@ -438,7 +438,7 @@ API_KEY=test-key
     });
   });
 
-  describe('modifyDockerProfile', () => {
+  describe('upsertDockerProfile', () => {
     beforeEach(() => {
       jest.clearAllMocks();
     });
