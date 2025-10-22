@@ -37,9 +37,9 @@ export async function startServices(): Promise<void> {
 
   try {
     // let's pull latest images first
-    composePull();
+    await composePull();
 
-    composeUp();
+    await composeUp();
 
     setupComplete(true);
   } catch (error) {
