@@ -169,8 +169,8 @@ export const upsertDockerProfile = async (
   let profiles = new Set(
     (dockerProfileVariable.value || '')
       .split(',')
-      .filter((x) => !!x)
-      .map((x) => x.trim()),
+      .map((x) => x.trim())
+      .filter((x) => !!x),
   );
 
   if (enabled) {
