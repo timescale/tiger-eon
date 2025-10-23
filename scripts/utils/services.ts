@@ -1,6 +1,6 @@
 import { log } from './log';
 import { confirm } from '@inquirer/prompts';
-import { composePull, composeUp } from './docker';
+import { composeUp } from './docker';
 
 const setupComplete = (startedServices: boolean) => {
   console.log('\n🎉 Tiger Agent setup complete!\n');
@@ -36,9 +36,6 @@ export async function startServices(): Promise<void> {
   log.info('Starting Tiger Agent services...');
 
   try {
-    // let's pull latest images first
-    await composePull();
-
     await composeUp();
 
     setupComplete(true);

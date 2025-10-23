@@ -18,6 +18,7 @@ services:
       start_period: 10s
     profiles:
       - db
+    pull_policy: always
 
   tiger-agent:
     image: ghcr.io/timescale/tiger-agent:latest
@@ -41,6 +42,7 @@ services:
         "--mcp-config",
         "/app/mcp_config.json",
       ]
+    pull_policy: always
 
   tiger-slack-ingest:
     image: ghcr.io/timescale/tiger-slack-ingest:latest
@@ -49,6 +51,7 @@ services:
     environment:
       SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
       SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
+    pull_policy: always
 
   tiger-slack-mcp-server:
     image: ghcr.io/timescale/tiger-slack-mcp:latest
@@ -58,6 +61,7 @@ services:
       PORT: 80
     ports:
       - "3001:80"
+    pull_policy: always
 
   tiger-gh-mcp-server:
     image: ghcr.io/timescale/tiger-github-mcp:latest
@@ -69,6 +73,7 @@ services:
       - "3002:80"
     profiles:
       - github
+    pull_policy: always
 
   tiger-linear-mcp-server:
     image: ghcr.io/timescale/tiger-linear-mcp:latest
@@ -80,5 +85,6 @@ services:
       - "3003:80"
     profiles:
       - linear
+    pull_policy: always
 volumes:
   postgres_data:
