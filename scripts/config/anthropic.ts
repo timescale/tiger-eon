@@ -55,7 +55,7 @@ export class AnthropicConfig extends Config {
     }
   }
 
-  getVariablesInternal(): EnvironmentVariable[] {
+  getVariables(): EnvironmentVariable[] {
     return [{ key: 'ANTHROPIC_API_KEY', value: this.apiKey }];
   }
 }

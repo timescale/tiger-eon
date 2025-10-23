@@ -3,9 +3,11 @@ import { EnvironmentVariable, McpConfigGroup } from '../types';
 
 import { select } from '@inquirer/prompts';
 import { log } from './log';
+import { startServices } from './services';
 
 const ENV_FILE = '.env';
 const MCP_CONFIG_FILE = 'mcp_config.json';
+const DOCKER_PROFILES_VARIABLE_KEY = 'COMPOSE_PROFILES';
 
 export const upsertEnvironmentVariables = async (
   variables: EnvironmentVariable[],
@@ -91,7 +93,7 @@ export const checkExistingConfig = async (): Promise<EnvironmentVariable[]> => {
           description: 'Backup current .env and create a new configuration',
         },
         {
-          name: 'Keep existing configuration and exit',
+          name: 'Keep existing configuration',
           value: 'keep',
           description: 'Leave your current setup unchanged',
         },
@@ -105,7 +107,8 @@ export const checkExistingConfig = async (): Promise<EnvironmentVariable[]> => {
       log.success(`Backed up existing .env file to ${backup}`);
       return [];
     } else if (action === 'keep') {
-      log.info('Keeping existing configuration. Exiting.');
+      log.info('Keeping existing configuration.');
+      await startServices();
       process.exit(0);
     }
 
@@ -152,4 +155,46 @@ export const upsertMcpConfig = async (
       'Could not update mcp_config.json - you may need to configure it manually',
     );
   }
+};
+
+export const upsertDockerProfile = async (
+  profile: string,
+  enabled: boolean,
+) => {
+  const variables = await getEnvironmentVariables();
+  const dockerProfileVariable = variables.find(
+    (x) => x.key === DOCKER_PROFILES_VARIABLE_KEY,
+  ) || { key: DOCKER_PROFILES_VARIABLE_KEY };
+
+  let profiles = new Set(
+    (dockerProfileVariable.value || '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter((x) => !!x),
+  );
+
+  if (enabled) {
+    if (profiles.has(profile)) {
+      log.info(`Docker profile ${profile} already enabled`);
+      return;
+    }
+
+    profiles.add(profile);
+    log.info(`Docker profile ${profile} enabled`);
+  } else {
+    if (!profiles.has(profile)) {
+      log.info(`Docker profile ${profile} already disabled`);
+      return;
+    }
+
+    profiles.delete(profile);
+    log.info(`Docker profile ${profile} disabled`);
+  }
+
+  await upsertEnvironmentVariables([
+    {
+      key: DOCKER_PROFILES_VARIABLE_KEY,
+      value: Array.from(profiles).join(','),
+    },
+  ]);
 };

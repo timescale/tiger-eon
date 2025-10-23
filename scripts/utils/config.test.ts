@@ -13,6 +13,7 @@ import {
   upsertEnvironmentVariables,
   getMcpConfig,
   upsertMcpConfig,
+  upsertDockerProfile,
 } from './config';
 
 // Mock fs/promises, fs, and log utility
@@ -156,12 +157,12 @@ API_KEY=test-key
 
   describe('getMcpConfig', () => {
     it('should return empty object when mcp_config.json does not exist', async () => {
-      mockExistsSync.mockReturnValue(false);
+      mockReadFile.mockRejectedValue(new Error('File not found'));
 
       const result = await getMcpConfig();
 
       expect(result).toEqual({});
-      expect(mockExistsSync).toHaveBeenCalledWith('mcp_config.json');
+      expect(mockReadFile).toHaveBeenCalledWith('mcp_config.json', 'utf-8');
     });
 
     it('should parse mcp_config.json correctly when file exists', async () => {
@@ -181,7 +182,6 @@ API_KEY=test-key
         },
       };
 
-      mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(JSON.stringify(mcpConfigContent));
 
       const result = await getMcpConfig();
@@ -193,7 +193,6 @@ API_KEY=test-key
     it('should handle malformed JSON and return empty object', async () => {
       const invalidJsonContent = '{ "slack": { "url": "test", invalid json }';
 
-      mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(invalidJsonContent);
 
       const result = await getMcpConfig();
@@ -202,7 +201,6 @@ API_KEY=test-key
     });
 
     it('should handle file read errors and return empty object', async () => {
-      mockExistsSync.mockReturnValue(true);
       mockReadFile.mockRejectedValue(new Error('Permission denied'));
 
       const result = await getMcpConfig();
@@ -211,7 +209,6 @@ API_KEY=test-key
     });
 
     it('should handle empty mcp_config.json file', async () => {
-      mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue('{}');
 
       const result = await getMcpConfig();
@@ -226,7 +223,6 @@ API_KEY=test-key
         },
       };
 
-      mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(JSON.stringify(minimalConfig));
 
       const result = await getMcpConfig();
@@ -243,7 +239,6 @@ API_KEY=test-key
         },
       };
 
-      mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(JSON.stringify(fullConfig));
 
       const result = await getMcpConfig();
@@ -380,7 +375,11 @@ API_KEY=test-key
       await upsertMcpConfig(newConfigs);
 
       expect(mockReadFile).toHaveBeenCalledWith('mcp_config.json', 'utf-8');
-      expect(mockWriteFile).not.toHaveBeenCalled();
+      // When file read fails, it should start with empty config and still write
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        'mcp_config.json',
+        JSON.stringify(newConfigs, null, 2),
+      );
     });
 
     it('should handle malformed JSON in existing config', async () => {
@@ -395,7 +394,11 @@ API_KEY=test-key
 
       await upsertMcpConfig(newConfigs);
 
-      expect(mockWriteFile).not.toHaveBeenCalled();
+      // When JSON parsing fails, it should start with empty config and still write
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        'mcp_config.json',
+        JSON.stringify(newConfigs, null, 2),
+      );
     });
 
     it('should handle write file errors gracefully', async () => {
@@ -431,6 +434,182 @@ API_KEY=test-key
       expect(mockWriteFile).toHaveBeenCalledWith(
         'mcp_config.json',
         JSON.stringify(existingConfig, null, 2),
+      );
+    });
+  });
+
+  describe('upsertDockerProfile', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should enable a Docker profile when profile does not exist in COMPOSE_PROFILES', async () => {
+      const existingEnv = 'API_KEY=test-key\nLOG_LEVEL=debug';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', true);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'API_KEY=test-key\nLOG_LEVEL=debug\nCOMPOSE_PROFILES=github',
+        'utf-8',
+      );
+    });
+
+    it('should enable a Docker profile when COMPOSE_PROFILES exists but is empty', async () => {
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', true);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'API_KEY=test-key\nCOMPOSE_PROFILES=github',
+        'utf-8',
+      );
+    });
+
+    it('should add a Docker profile to existing COMPOSE_PROFILES', async () => {
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', true);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'API_KEY=test-key\nCOMPOSE_PROFILES=db,github',
+        'utf-8',
+      );
+    });
+
+    it('should not add a Docker profile if it already exists in COMPOSE_PROFILES', async () => {
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db,github';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', true);
+
+      // Should not call writeFile since profile already exists
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should remove a Docker profile from COMPOSE_PROFILES', async () => {
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db,github,linear';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', false);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'API_KEY=test-key\nCOMPOSE_PROFILES=db,linear',
+        'utf-8',
+      );
+    });
+
+    it('should not modify COMPOSE_PROFILES when trying to remove non-existent profile', async () => {
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=db';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', false);
+
+      // Should not call writeFile since profile doesn't exist
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should handle empty COMPOSE_PROFILES when trying to remove profile', async () => {
+      const existingEnv = 'API_KEY=test-key\nCOMPOSE_PROFILES=';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', false);
+
+      // Should not call writeFile since profile doesn't exist
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should handle case when no .env file exists and enabling profile', async () => {
+      mockReadFile.mockRejectedValue(new Error('File not found'));
+
+      await upsertDockerProfile('github', true);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'COMPOSE_PROFILES=github',
+        'utf-8',
+      );
+    });
+
+    it('should handle case when no .env file exists and disabling profile', async () => {
+      mockReadFile.mockRejectedValue(new Error('File not found'));
+
+      await upsertDockerProfile('github', false);
+
+      // Should not call writeFile since profile doesn't exist and we're disabling
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should handle multiple profiles in COMPOSE_PROFILES correctly', async () => {
+      const existingEnv = 'COMPOSE_PROFILES=db,github,linear,monitoring';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('linear', false);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'COMPOSE_PROFILES=db,github,monitoring',
+        'utf-8',
+      );
+    });
+
+    it('should handle profiles with whitespace in COMPOSE_PROFILES', async () => {
+      const existingEnv = 'COMPOSE_PROFILES= db , github , linear ';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('monitoring', true);
+
+      // Note: The implementation trims whitespace and filters out empty strings
+      // Profile names are cleaned up and joined with commas (no spaces)
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'COMPOSE_PROFILES=db,github,linear,monitoring',
+        'utf-8',
+      );
+    });
+
+    it('should enable profile when COMPOSE_PROFILES contains only the profile being enabled', async () => {
+      const existingEnv = 'COMPOSE_PROFILES=github';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', true);
+
+      // Should not call writeFile since profile already exists
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should handle removing the only profile from COMPOSE_PROFILES', async () => {
+      const existingEnv = 'COMPOSE_PROFILES=github';
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', false);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'COMPOSE_PROFILES=',
+        'utf-8',
+      );
+    });
+
+    it('should preserve other environment variables when modifying Docker profiles', async () => {
+      const existingEnv = `API_KEY=secret123
+DATABASE_URL=postgres://localhost:5432/db
+COMPOSE_PROFILES=db
+LOG_LEVEL=info`;
+      mockReadFile.mockResolvedValue(existingEnv);
+
+      await upsertDockerProfile('github', true);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '.env',
+        'API_KEY=secret123\nDATABASE_URL=postgres://localhost:5432/db\nCOMPOSE_PROFILES=db,github\nLOG_LEVEL=info',
+        'utf-8',
       );
     });
   });

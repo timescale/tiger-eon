@@ -1,15 +1,16 @@
 import { input, select } from '@inquirer/prompts';
-import { EnvironmentVariable, SlackAppConfig, SlackTokens } from '../types';
+import {
+  ConfigWithMcpServer,
+  EnvironmentVariable,
+  SlackAppConfig,
+  SlackTokens,
+} from '../types';
 import { copyToClipboard, downloadJson, openBrowser } from '../utils';
-import { ConfigWithMcpServer } from './config';
+import { Config } from './config';
 import { validateTokenHasCorrectPrefix } from '../utils/string';
 
-abstract class SlackConfig extends ConfigWithMcpServer {
+abstract class SlackConfig extends Config {
   readonly required = true;
-  readonly mcpName = 'slack';
-  readonly mcpConfig = {
-    url: 'http://tiger-slack-mcp-server/mcp',
-  };
 
   protected abstract readonly config: SlackAppConfig;
   private tokens: SlackTokens | undefined;
@@ -117,7 +118,7 @@ abstract class SlackConfig extends ConfigWithMcpServer {
     }
   }
 
-  getVariablesInternal(): EnvironmentVariable[] {
+  getVariables(): EnvironmentVariable[] {
     return [
       {
         key: `SLACK_${this.config.type.toUpperCase()}_APP_TOKEN`,
@@ -142,7 +143,14 @@ export class AgentSlackConfig extends SlackConfig {
   };
 }
 
-export class IngestSlackConfig extends SlackConfig {
+export class IngestSlackConfig
+  extends SlackConfig
+  implements ConfigWithMcpServer
+{
+  readonly mcpName = 'slack';
+  readonly mcpConfig = {
+    url: 'http://tiger-slack-mcp-server/mcp',
+  };
   readonly name = 'Slack Ingest App';
   protected readonly config: SlackAppConfig = {
     name: 'tiger-slack-ingest',

@@ -1,12 +1,7 @@
 import { confirm } from '@inquirer/prompts';
 import { configs } from './config';
-import { ConfigWithMcpServer } from './config/config';
 import { log } from './utils/log';
-import {
-  checkExistingConfig,
-  upsertEnvironmentVariables,
-  upsertMcpConfig,
-} from './utils/config';
+import { checkExistingConfig } from './utils/config';
 import { startServices } from './utils/services';
 
 const introMessage = () => {
@@ -95,15 +90,7 @@ export default async function setup() {
           break;
         }
       }
-
-      const vars = config.getVariables();
-
-      await upsertEnvironmentVariables(vars);
-
-      if (config instanceof ConfigWithMcpServer) {
-        const mcpConfig = config.getMcpConfigGroup();
-        await upsertMcpConfig(mcpConfig);
-      }
+      await config.persist();
     }
 
     await startServices();
