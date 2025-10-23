@@ -34,14 +34,12 @@ services:
     ports:
       - "5678:5678"
     command:
-      [
-        "uv",
-        "run",
-        "tiger_agent",
-        "run",
-        "--mcp-config",
-        "/app/mcp_config.json",
-      ]
+      - uv
+      - run
+      - tiger_agent
+      - run
+      - --mcp-config
+      - /app/mcp_config.json
     pull_policy: always
 
   tiger-slack-ingest:
@@ -51,6 +49,7 @@ services:
     environment:
       SLACK_APP_TOKEN: ${SLACK_INGEST_APP_TOKEN}
       SLACK_BOT_TOKEN: ${SLACK_INGEST_BOT_TOKEN}
+      SERVICE_NAME: slack-ingest
     pull_policy: always
 
   tiger-slack-mcp-server:
@@ -59,6 +58,7 @@ services:
       - .env
     environment:
       PORT: 80
+      OTEL_SERVICE_NAME: slack-mcp
     ports:
       - "3001:80"
     pull_policy: always
@@ -69,6 +69,7 @@ services:
       - .env
     environment:
       PORT: 80
+      OTEL_SERVICE_NAME: gh-mcp
     ports:
       - "3002:80"
     profiles:
@@ -81,6 +82,7 @@ services:
       - .env
     environment:
       PORT: 80
+      OTEL_SERVICE_NAME: linear-mcp
     ports:
       - "3003:80"
     profiles:

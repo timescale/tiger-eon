@@ -30,6 +30,7 @@ export class LogfireConfig extends Config {
 
   getVariables(): EnvironmentVariable[] {
     return [
+      { key: 'INSTRUMENT', value: 'true' },
       { key: 'LOGFIRE_TOKEN', value: this.token },
       { key: 'LOGFIRE_ENVIRONMENT', value: this.environment },
       {
