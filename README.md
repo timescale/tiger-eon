@@ -26,7 +26,7 @@ Eon responds instantly, pulling from the tools you already use. No new UI, no ne
 ## What Eon Can Do
 
 **Available now**
-- **Slack** — Ask questions across your company's conversations and history
+- **Slack** — Ask questions, and Eon searches your company's public conversations and history to find the answers
 - **GitHub (optional)** — Summarize pull requests, issues, and activity
 - **Linear (optional)** — Stay on top of project tasks and issues
 
