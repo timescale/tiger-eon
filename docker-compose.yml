@@ -30,7 +30,6 @@ services:
       SERVICE_NAME: ${SERVICE_NAME:-tiger-eon}
     volumes:
       - ./mcp_config.json:/app/mcp_config.json:ro
-      - ./prompts:/app/prompts:ro
     ports:
       - "5678:5678"
     command:
